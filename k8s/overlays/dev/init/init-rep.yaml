@@ -1,0 +1,30 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: init-rep
+  namespace: xainet
+spec:
+  ttlSecondsAfterFinished: 300
+  template:
+    spec:
+      restartPolicy: Never
+      volumes:
+        - name: workdir-storage
+          persistentVolumeClaim:
+            claimName: l2-workdir
+        - name: data-storage
+          persistentVolumeClaim:
+            claimName: l2-rep-data
+      containers:
+        - name: init-rep
+          image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-geth:v1.101702.2
+          args:
+            - init
+            - --datadir=/workspace/op-geth-data
+            - --state.scheme=hash
+            - /workspace/config/genesis.json
+          volumeMounts:
+            - mountPath: "/workspace/config"
+              name: workdir-storage
+            - mountPath: "/workspace/op-geth-data"
+              name: data-storage

@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: op-seq
+  namespace: xainet
+spec:
+  template:
+    spec:
+      containers:
+        - name: op-geth
+          image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-geth:v1.101702.2
+          resources:
+            limits:
+              cpu: 0.5
+              memory: 1Gi
+            requests:
+              cpu: 0.25
+              memory: 250Mi
+        - name: op-node
+          image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-node:v1.19.4
+          resources:
+            limits:
+              cpu: 0.5
+              memory: 1Gi
+            requests:
+              cpu: 0.25
+              memory: 250Mi

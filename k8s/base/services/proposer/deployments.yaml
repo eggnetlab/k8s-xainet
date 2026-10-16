@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: op-proposer
+  name: op-proposer
+  namespace: xainet
+spec:
+  revisionHistoryLimit: 2
+  replicas: 1
+  selector:
+    matchLabels:
+      app: op-proposer
+  template:
+    metadata:
+      labels:
+        app: op-proposer
+    spec:
+      serviceAccountName: xainet-sa
+      volumes:
+        - name: workdir-storage
+          persistentVolumeClaim:
+            claimName: l2-workdir
+        - name: config-storage
+          emptyDir: {}
+      initContainers:
+        - name: setup-envfile
+          image: alpine:3
+          command:
+            - sh
+            - -c
+            - |
+              set -e
+              VAL=$(grep '^GAME_FACTORY_ADDRESS=' /workdir/.env | cut -d '=' -f2- | tr -d '\r"'"'"' ')
+              printf "GAME_FACTORY_ADDRESS='%s'\n" "$VAL" > /data/config.env
+          volumeMounts:
+            - name: config-storage
+              mountPath: /data
+            - name: workdir-storage
+              mountPath: /workdir
+      containers:
+        - name: op-proposer
+          imagePullPolicy: Always
+          envFrom:
+            - configMapRef:
+                name: blockchain-config-env
+          command:
+            - op-proposer
+          args:
+            - --rpc.port=8560
+            - --rollup-rpc=$(l2RollupUrl)
+            - --game-factory-address=$(GAME_FACTORY_ADDRESS)
+            - --game-type=1 # da usare in rete permissioned
+            - --proposal-interval=10m
+            - --allow-non-finalized=true
+            - --wait-node-sync=true
+            - --log.level=info
+            - --log.format=json
+          readinessProbe:
+            tcpSocket:
+              port: 8560
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 6

@@ -1,0 +1,82 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: blockscout-backend
+  namespace: xainet
+spec:
+  template:
+    spec:
+      containers:
+        - name: backend
+          envFrom:
+            - configMapRef:
+                name: blockscout-config
+            - configMapRef:
+                name: blockscout-config-env
+          env:
+            - name: postgres_host
+              valueFrom:
+                configMapKeyRef:
+                  name: psql-config-env
+                  key: dbHost
+            - name: postgres_port
+              valueFrom:
+                configMapKeyRef:
+                  name: psql-config-env
+                  key: dbPort
+            - name: postgres_db
+              valueFrom:
+                configMapKeyRef:
+                  name: psql-config
+                  key: dbName
+            - name: postgres_user
+              value: "blockscout"
+            - name: postgres_pass
+              valueFrom:
+                secretKeyRef:
+                  name: psql-auth
+                  key: password
+            - name: DATABASE_URL
+              value: "postgresql://$(postgres_user):$(postgres_pass)@$(postgres_host):$(postgres_port)/$(postgres_db)"
+            - name: SECRET_KEY_BASE
+              valueFrom:
+                secretKeyRef:
+                  name: blockscout
+                  key: SECRET_KEY_BASE
+            - name: NETWORK
+              valueFrom:
+                configMapKeyRef:
+                  name: blockchain-config
+                  key: l2Name
+            - name: SUBNETWORK
+              valueFrom:
+                configMapKeyRef:
+                  name: blockchain-config
+                  key: l2Name
+            - name: CHAIN_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: blockchain-config-env
+                  key: l2ChainId
+            - name: COIN
+              valueFrom:
+                configMapKeyRef:
+                  name: blockchain-config
+                  key: l2CurrencySymbol
+            - name: ETHEREUM_JSONRPC_HTTP_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: blockchain-config-env
+                  key: l2RepUrl
+            - name: ETHEREUM_JSONRPC_TRACE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: blockchain-config-env
+                  key: l2RepUrl
+            - name: ETHEREUM_JSONRPC_WS_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: blockchain-config-env
+                  key: l2RepWs
+            - name: ETHEREUM_JSONRPC_VARIANT
+              value: "geth"

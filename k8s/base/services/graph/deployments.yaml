@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: op-graph
+  name: op-graph
+  namespace: xainet
+spec:
+  revisionHistoryLimit: 2
+  replicas: 1
+  selector:
+    matchLabels:
+      app: op-graph
+  template:
+    metadata:
+      labels:
+        app: op-graph
+    spec:
+      serviceAccountName: xainet-sa
+      containers:
+        - name: op-graph
+          imagePullPolicy: Always
+          readinessProbe:
+            tcpSocket:
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 6

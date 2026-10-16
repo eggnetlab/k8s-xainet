@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: blockscout-frontend
+  namespace: xainet
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: blockscout-frontend
+  template:
+    metadata:
+      labels:
+        app: blockscout-frontend
+    spec:
+      containers:
+        - name: frontend
+          image: ghcr.io/blockscout/frontend:v2.3.5
+          ports:
+            - containerPort: 3000
+              name: http
+          readinessProbe:
+            tcpSocket:
+              port: 3000
+            periodSeconds: 10

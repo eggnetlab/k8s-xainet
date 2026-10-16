@@ -1,0 +1,22 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: xainet
+
+resources:
+  # base
+  - ../../../base/setup
+  # config
+  - configmaps/config/batcher.yaml
+  - configmaps/config/blockchain.yaml
+  - configmaps/config/ipfs.yaml
+  - configmaps/config/p2p.yaml
+  - configmaps/config/psql.yaml
+  # secrets
+  - secrets/blockscout.yaml
+  - secrets/l2-private-key.yaml
+  - secrets/p2p-private-key.yaml
+  - secrets/psql-auth.yaml
+  # pvc
+  - pvc/l2-rep-data.yaml
+  - pvc/l2-seq-data.yaml
+  - pvc/l2-workdir.yaml

@@ -1,0 +1,12 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: op-bundler
+  namespace: xainet
+spec:
+  template:
+    spec:
+      volumes:
+        - name: op-bundler-config-env
+          configMap:
+            name: op-bundler-config-env

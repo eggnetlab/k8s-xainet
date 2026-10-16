@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sc-verifier
+  namespace: xainet
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sc-verifier
+  template:
+    metadata:
+      labels:
+        app: sc-verifier
+    spec:
+      containers:
+        - name: sc-verifier
+          image: ghcr.io/blockscout/smart-contract-verifier:v1.11.0
+          ports:
+            - containerPort: 8050

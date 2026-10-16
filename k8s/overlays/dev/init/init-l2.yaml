@@ -1,0 +1,31 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: init-l2
+  namespace: xainet
+spec:
+  ttlSecondsAfterFinished: 300
+  template:
+    spec:
+      restartPolicy: Never
+      volumes:
+        - name: workdir-storage
+          persistentVolumeClaim:
+            claimName: l2-workdir
+      containers:
+        - name: task-pv-container
+          image: localhost:5000/l2-conf:dev
+          imagePullPolicy: Always
+          envFrom:
+            - configMapRef:
+                name: blockchain-config-env
+            - secretRef:
+                name: l2-private-key
+          args:
+            - $(l1ChainId)
+            - $(l1RpcUrl)
+            - $(l2ChainId)
+            - $(l1AdminPK)
+          volumeMounts:
+            - mountPath: "/workdir"
+              name: workdir-storage

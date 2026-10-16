@@ -1,0 +1,18 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: op-batcher
+  namespace: xainet
+spec:
+  template:
+    spec:
+      containers:
+        - name: op-batcher
+          image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-batcher:v1.16.2
+          resources:
+            limits:
+              cpu: 0.1
+              memory: 250Mi
+            requests:
+              cpu: 0.1
+              memory: 50Mi

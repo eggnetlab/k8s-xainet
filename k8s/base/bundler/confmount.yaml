@@ -1,0 +1,15 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: op-bundler
+  namespace: xainet
+spec:
+  template:
+    spec:
+      containers:
+        - name: op-bundler
+          volumeMounts:
+            - name: op-bundler-config-env
+              readOnly: true
+              mountPath: /usr/app/config.json
+              subPath: config.json

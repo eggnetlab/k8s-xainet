@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: blockscout-config
+data:
+  # ---- App ----
+  PORT: "4000"
+  DISABLE_EXCHANGE_RATES: "true"
+  API_V2_ENABLED: "true"
+  # ---- Smart contract verifier ----
+  MICROSERVICE_SC_VERIFIER_ENABLED: "true"
+  MICROSERVICE_SC_VERIFIER_URL: "http://sc-verifier:8050/"
+  MICROSERVICE_SC_VERIFIER_TYPE: "sc_verifier"

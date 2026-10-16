@@ -1,0 +1,16 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: op-seq
+  namespace: xainet
+spec:
+  template:
+    spec:
+      containers:
+        - name: op-node
+          env:
+            - name: OP_NODE_P2P_SEQUENCER_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: p2p-private-key
+                  key: sequencer

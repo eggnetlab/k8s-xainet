@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: blockscout-config-env
+data:
+  ECTO_USE_SSL: "false"
+  POOL_SIZE: "10"
+  POOL_SIZE_API: "10"
+  BLOCKSCOUT_HOST: "explorer.xailour.xaidev"
+  BLOCKSCOUT_PROTOCOL: "http"
+  REDIS_URL: "redis://xai-redis:6379"
+  WEBSOCKET_PROTOCOL: "ws"
