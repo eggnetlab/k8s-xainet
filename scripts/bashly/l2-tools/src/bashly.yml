@@ -1,0 +1,22 @@
+name: l2-tools
+help: Local environment management
+version: 0.1.0
+
+variables:
+  - name: mark
+    value: "[@@@ L2-TOOLS]"
+
+commands:
+  - name: network
+    alias: n
+    args:
+      - name: name
+        help: network name
+        required: true
+    flags:
+      - short: -a
+        long: --base-address
+        arg: base-address
+        help: base address
+        default: 172.25.0
+
