@@ -14,9 +14,37 @@ commands:
         help: network name
         required: true
     flags:
-      - short: -a
-        long: --base-address
-        arg: base-address
-        help: base address
-        default: 172.25.0
-
+      - short: -s
+        long: --subnet
+        arg: subnet
+        help: network subnet
+        required: true
+    examples:
+      - l2-tools network xai-devnet
+      - l2-tools network l2-devnet -s 172.26.0
+  - name: l1
+    help: l1 utilities
+    commands:
+      - name: start
+        help: start l1
+        examples:
+          - l2-tools l1 start
+      - name: stop
+        help: stop l1
+        examples:
+          - l2-tools l1 stop
+  - name: bc
+    help: bc utilities
+    commands:
+      - name: start
+        help: start bc
+        examples:
+          - l2-tools bc start
+      - name: stop
+        help: stop bc
+        examples:
+          - l2-tools bc stop
+      - name: restore
+        help: restore bc
+        examples:
+          - l2-tools bc restore

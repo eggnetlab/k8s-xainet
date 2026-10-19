@@ -22,6 +22,8 @@ l2_tools_usage() {
 
   printf "%s\n" "Commands:"
   printf "  %s   \n" "network"
+  printf "  %s   l1 utilities\n" "l1     "
+  printf "  %s   bc utilities\n" "bc     "
   echo
 
   if [[ -n "$long_usage" ]]; then
@@ -52,9 +54,8 @@ l2_tools_network_usage() {
 
     printf "%s\n" "Options:"
 
-    printf "  %s\n" "--base-address, -a BASE-ADDRESS"
-    printf "    base address\n"
-    printf "    %s\n" "Default: 172.25.0"
+    printf "  %s\n" "--subnet, -s SUBNET (required)"
+    printf "    network subnet\n"
     echo
 
     printf "  %s\n" "--help, -h"
@@ -65,6 +66,175 @@ l2_tools_network_usage() {
 
     printf "  %s\n" "NAME"
     printf "    network name\n"
+    echo
+
+    printf "%s\n" "Examples:"
+    printf "  l2-tools network xai-devnet\n"
+    printf "  l2-tools network l2-devnet -s 172.26.0\n"
+    echo
+
+  fi
+}
+
+l2_tools_l1_usage() {
+  printf "l2-tools l1 - l1 utilities\n\n"
+
+  printf "%s\n" "Usage:"
+  printf "  l2-tools l1 COMMAND\n"
+  printf "  l2-tools l1 [COMMAND] --help | -h\n"
+  echo
+
+  printf "%s\n" "Commands:"
+  printf "  %s   start l1\n" "start"
+  printf "  %s   stop l1\n" "stop "
+  echo
+
+  if [[ -n "$long_usage" ]]; then
+
+    printf "%s\n" "Options:"
+
+    printf "  %s\n" "--help, -h"
+    printf "    Show this help\n"
+    echo
+
+  fi
+}
+
+l2_tools_l1_start_usage() {
+  printf "l2-tools l1 start - start l1\n\n"
+
+  printf "%s\n" "Usage:"
+  printf "  l2-tools l1 start\n"
+  printf "  l2-tools l1 start --help | -h\n"
+  echo
+
+  if [[ -n "$long_usage" ]]; then
+
+    printf "%s\n" "Options:"
+
+    printf "  %s\n" "--help, -h"
+    printf "    Show this help\n"
+    echo
+
+    printf "%s\n" "Examples:"
+    printf "  l2-tools l1 start\n"
+    echo
+
+  fi
+}
+
+l2_tools_l1_stop_usage() {
+  printf "l2-tools l1 stop - stop l1\n\n"
+
+  printf "%s\n" "Usage:"
+  printf "  l2-tools l1 stop\n"
+  printf "  l2-tools l1 stop --help | -h\n"
+  echo
+
+  if [[ -n "$long_usage" ]]; then
+
+    printf "%s\n" "Options:"
+
+    printf "  %s\n" "--help, -h"
+    printf "    Show this help\n"
+    echo
+
+    printf "%s\n" "Examples:"
+    printf "  l2-tools l1 stop\n"
+    echo
+
+  fi
+}
+
+l2_tools_bc_usage() {
+  printf "l2-tools bc - bc utilities\n\n"
+
+  printf "%s\n" "Usage:"
+  printf "  l2-tools bc COMMAND\n"
+  printf "  l2-tools bc [COMMAND] --help | -h\n"
+  echo
+
+  printf "%s\n" "Commands:"
+  printf "  %s   start bc\n" "start  "
+  printf "  %s   stop bc\n" "stop   "
+  printf "  %s   restore bc\n" "restore"
+  echo
+
+  if [[ -n "$long_usage" ]]; then
+
+    printf "%s\n" "Options:"
+
+    printf "  %s\n" "--help, -h"
+    printf "    Show this help\n"
+    echo
+
+  fi
+}
+
+l2_tools_bc_start_usage() {
+  printf "l2-tools bc start - start bc\n\n"
+
+  printf "%s\n" "Usage:"
+  printf "  l2-tools bc start\n"
+  printf "  l2-tools bc start --help | -h\n"
+  echo
+
+  if [[ -n "$long_usage" ]]; then
+
+    printf "%s\n" "Options:"
+
+    printf "  %s\n" "--help, -h"
+    printf "    Show this help\n"
+    echo
+
+    printf "%s\n" "Examples:"
+    printf "  l2-tools bc start\n"
+    echo
+
+  fi
+}
+
+l2_tools_bc_stop_usage() {
+  printf "l2-tools bc stop - stop bc\n\n"
+
+  printf "%s\n" "Usage:"
+  printf "  l2-tools bc stop\n"
+  printf "  l2-tools bc stop --help | -h\n"
+  echo
+
+  if [[ -n "$long_usage" ]]; then
+
+    printf "%s\n" "Options:"
+
+    printf "  %s\n" "--help, -h"
+    printf "    Show this help\n"
+    echo
+
+    printf "%s\n" "Examples:"
+    printf "  l2-tools bc stop\n"
+    echo
+
+  fi
+}
+
+l2_tools_bc_restore_usage() {
+  printf "l2-tools bc restore - restore bc\n\n"
+
+  printf "%s\n" "Usage:"
+  printf "  l2-tools bc restore\n"
+  printf "  l2-tools bc restore --help | -h\n"
+  echo
+
+  if [[ -n "$long_usage" ]]; then
+
+    printf "%s\n" "Options:"
+
+    printf "  %s\n" "--help, -h"
+    printf "    Show this help\n"
+    echo
+
+    printf "%s\n" "Examples:"
+    printf "  l2-tools bc restore\n"
     echo
 
   fi
@@ -149,9 +319,19 @@ white_underlined() { print_in_color "\e[4;37m" "$*"; }
 
 # Logging utilities
 console() { echo -e "$mark $1"; }
-info() { echo -e "$(blue $mark "[INFO]" $1)"; }
+info() { echo -e "$(cyan $mark "[INFO]" $1)"; }
 success() { echo -e "$(green $mark "[SUCCESS]" $1)"; }
 error() { echo -e "$(red $mark "[ERROR]" $1)"; }
+
+init_l1() {
+    source_dir="$(cd -- "$(dirname -- "$0")" &>/dev/null && pwd)"
+    l1_conf_dir=$source_dir/../l1-conf
+
+    set -e
+    set -a
+    source $l1_conf_dir/.env
+    set +a
+}
 
 l2_tools_network_command() {
 
@@ -160,10 +340,67 @@ l2_tools_network_command() {
   if [ "$(docker network ls -q -f name=^${network_name}$)" ]; then
       info "network '$network_name' already exists"
   else
-      base_address=${args['--base-address']}
-      docker network create $network_name --gateway=$base_address.1 --subnet=$base_address.0/24 --ip-range=$base_address.0/25
+      subnet=${args['--subnet']}
+      docker network create $network_name --gateway=${subnet}.1 --subnet=${subnet}.0/24 --ip-range=${subnet}.0/25
       success "network '$network_name' created"
   fi
+
+}
+
+l2_tools_l1_start_command() {
+
+  console "start l1"
+
+  init_l1
+
+  kurtosis run github.com/ethpandaops/ethereum-package@5.0.1 \
+      --args-file $l1_conf_dir/network_params.yaml \
+      --enclave $L1_NAME
+
+  GETH_CONTAINER_NAME=$(docker ps --filter "label=kurtosis_service_name=el-1-geth-lighthouse" --format "{{.Names}}")
+  docker network connect \
+      --ip $L1_EL_ADDR \
+       xai-devnet $GETH_CONTAINER_NAME
+
+  GETH_CONTAINER_NAME=$(docker ps --filter "label=kurtosis_service_name=cl-1-lighthouse-geth" --format "{{.Names}}")
+  docker network connect \
+      --ip $L1_CL_ADDR \
+       xai-devnet $GETH_CONTAINER_NAME
+}
+
+l2_tools_l1_stop_command() {
+
+  console "stop l1"
+
+  init_l1
+
+  kurtosis enclave rm -f $L1_NAME
+}
+
+l2_tools_bc_start_command() {
+
+  source_dir="$(cd -- "$(dirname -- "$0")" &>/dev/null && pwd)"
+
+  $source_dir/l2-tools l1 start
+  #$source_dir/l2-tools l2 init
+  #$source_dir/l2-tools l2 start
+}
+
+l2_tools_bc_stop_command() {
+
+  source_dir="$(cd -- "$(dirname -- "$0")" &>/dev/null && pwd)"
+
+  # $source_dir/l2-tools l2 stop
+  $source_dir/l2-tools l1 stop
+
+}
+
+l2_tools_bc_restore_command() {
+
+  source_dir="$(cd -- "$(dirname -- "$0")" &>/dev/null && pwd)"
+
+  $source_dir/l2-tools bc stop -o
+  $source_dir/l2-tools bc start -o
 
 }
 
@@ -200,6 +437,20 @@ parse_requirements() {
       action="network"
       shift
       l2_tools_network_parse_requirements "$@"
+      shift $#
+      ;;
+
+    l1)
+      action="l1"
+      shift
+      l2_tools_l1_parse_requirements "$@"
+      shift $#
+      ;;
+
+    bc)
+      action="bc"
+      shift
+      l2_tools_bc_parse_requirements "$@"
       shift $#
       ;;
 
@@ -273,14 +524,14 @@ l2_tools_network_parse_requirements() {
     key="$1"
     case "$key" in
 
-      --base-address | -a)
+      --subnet | -s)
 
         if [[ -n ${2+x} ]]; then
-          args['--base-address']="$2"
+          args['--subnet']="$2"
           shift
           shift
         else
-          printf "%s\n" "--base-address requires an argument: --base-address, -a BASE-ADDRESS" >&2
+          printf "%s\n" "--subnet requires an argument: --subnet, -s SUBNET" >&2
           exit 1
         fi
         ;;
@@ -328,7 +579,453 @@ l2_tools_network_parse_requirements() {
     exit 1
   fi
 
-  [[ -n ${args['--base-address']:-} ]] || args['--base-address']="172.25.0"
+  if [[ -z ${args['--subnet']+x} ]]; then
+    printf "missing required flag: --subnet, -s SUBNET\n" >&2
+    exit 1
+  fi
+
+}
+
+l2_tools_l1_parse_requirements() {
+  local key
+
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+      --help | -h)
+        long_usage=yes
+        l2_tools_l1_usage
+        exit
+        ;;
+
+      *)
+        break
+        ;;
+
+    esac
+  done
+
+  action=${1:-}
+
+  case $action in
+    -*) ;;
+
+    start)
+      action="start"
+      shift
+      l2_tools_l1_start_parse_requirements "$@"
+      shift $#
+      ;;
+
+    stop)
+      action="stop"
+      shift
+      l2_tools_l1_stop_parse_requirements "$@"
+      shift $#
+      ;;
+
+    "")
+      l2_tools_l1_usage >&2
+      exit 1
+      ;;
+
+    *)
+      printf "invalid command: %s\n" "$action" >&2
+      exit 1
+      ;;
+
+  esac
+
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+
+      --)
+        shift
+        while [[ $# -gt 0 ]]; do
+          key="$1"
+
+          printf "invalid argument: %s\n" "$key" >&2
+          exit 1
+
+        done
+        break
+        ;;
+
+      -?*)
+        printf "invalid option: %s\n" "$key" >&2
+        exit 1
+        ;;
+
+      *)
+
+        printf "invalid argument: %s\n" "$key" >&2
+        exit 1
+
+        ;;
+
+    esac
+  done
+
+}
+
+l2_tools_l1_start_parse_requirements() {
+  local key
+
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+      --help | -h)
+        long_usage=yes
+        l2_tools_l1_start_usage
+        exit
+        ;;
+
+      *)
+        break
+        ;;
+
+    esac
+  done
+
+  action="l1 start"
+
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+
+      --)
+        shift
+        while [[ $# -gt 0 ]]; do
+          key="$1"
+
+          printf "invalid argument: %s\n" "$key" >&2
+          exit 1
+
+        done
+        break
+        ;;
+
+      -?*)
+        printf "invalid option: %s\n" "$key" >&2
+        exit 1
+        ;;
+
+      *)
+
+        printf "invalid argument: %s\n" "$key" >&2
+        exit 1
+
+        ;;
+
+    esac
+  done
+
+}
+
+l2_tools_l1_stop_parse_requirements() {
+  local key
+
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+      --help | -h)
+        long_usage=yes
+        l2_tools_l1_stop_usage
+        exit
+        ;;
+
+      *)
+        break
+        ;;
+
+    esac
+  done
+
+  action="l1 stop"
+
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+
+      --)
+        shift
+        while [[ $# -gt 0 ]]; do
+          key="$1"
+
+          printf "invalid argument: %s\n" "$key" >&2
+          exit 1
+
+        done
+        break
+        ;;
+
+      -?*)
+        printf "invalid option: %s\n" "$key" >&2
+        exit 1
+        ;;
+
+      *)
+
+        printf "invalid argument: %s\n" "$key" >&2
+        exit 1
+
+        ;;
+
+    esac
+  done
+
+}
+
+l2_tools_bc_parse_requirements() {
+  local key
+
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+      --help | -h)
+        long_usage=yes
+        l2_tools_bc_usage
+        exit
+        ;;
+
+      *)
+        break
+        ;;
+
+    esac
+  done
+
+  action=${1:-}
+
+  case $action in
+    -*) ;;
+
+    start)
+      action="start"
+      shift
+      l2_tools_bc_start_parse_requirements "$@"
+      shift $#
+      ;;
+
+    stop)
+      action="stop"
+      shift
+      l2_tools_bc_stop_parse_requirements "$@"
+      shift $#
+      ;;
+
+    restore)
+      action="restore"
+      shift
+      l2_tools_bc_restore_parse_requirements "$@"
+      shift $#
+      ;;
+
+    "")
+      l2_tools_bc_usage >&2
+      exit 1
+      ;;
+
+    *)
+      printf "invalid command: %s\n" "$action" >&2
+      exit 1
+      ;;
+
+  esac
+
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+
+      --)
+        shift
+        while [[ $# -gt 0 ]]; do
+          key="$1"
+
+          printf "invalid argument: %s\n" "$key" >&2
+          exit 1
+
+        done
+        break
+        ;;
+
+      -?*)
+        printf "invalid option: %s\n" "$key" >&2
+        exit 1
+        ;;
+
+      *)
+
+        printf "invalid argument: %s\n" "$key" >&2
+        exit 1
+
+        ;;
+
+    esac
+  done
+
+}
+
+l2_tools_bc_start_parse_requirements() {
+  local key
+
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+      --help | -h)
+        long_usage=yes
+        l2_tools_bc_start_usage
+        exit
+        ;;
+
+      *)
+        break
+        ;;
+
+    esac
+  done
+
+  action="bc start"
+
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+
+      --)
+        shift
+        while [[ $# -gt 0 ]]; do
+          key="$1"
+
+          printf "invalid argument: %s\n" "$key" >&2
+          exit 1
+
+        done
+        break
+        ;;
+
+      -?*)
+        printf "invalid option: %s\n" "$key" >&2
+        exit 1
+        ;;
+
+      *)
+
+        printf "invalid argument: %s\n" "$key" >&2
+        exit 1
+
+        ;;
+
+    esac
+  done
+
+}
+
+l2_tools_bc_stop_parse_requirements() {
+  local key
+
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+      --help | -h)
+        long_usage=yes
+        l2_tools_bc_stop_usage
+        exit
+        ;;
+
+      *)
+        break
+        ;;
+
+    esac
+  done
+
+  action="bc stop"
+
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+
+      --)
+        shift
+        while [[ $# -gt 0 ]]; do
+          key="$1"
+
+          printf "invalid argument: %s\n" "$key" >&2
+          exit 1
+
+        done
+        break
+        ;;
+
+      -?*)
+        printf "invalid option: %s\n" "$key" >&2
+        exit 1
+        ;;
+
+      *)
+
+        printf "invalid argument: %s\n" "$key" >&2
+        exit 1
+
+        ;;
+
+    esac
+  done
+
+}
+
+l2_tools_bc_restore_parse_requirements() {
+  local key
+
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+      --help | -h)
+        long_usage=yes
+        l2_tools_bc_restore_usage
+        exit
+        ;;
+
+      *)
+        break
+        ;;
+
+    esac
+  done
+
+  action="bc restore"
+
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+
+      --)
+        shift
+        while [[ $# -gt 0 ]]; do
+          key="$1"
+
+          printf "invalid argument: %s\n" "$key" >&2
+          exit 1
+
+        done
+        break
+        ;;
+
+      -?*)
+        printf "invalid option: %s\n" "$key" >&2
+        exit 1
+        ;;
+
+      *)
+
+        printf "invalid argument: %s\n" "$key" >&2
+        exit 1
+
+        ;;
+
+    esac
+  done
 
 }
 
@@ -353,6 +1050,13 @@ run() {
 
   case "$action" in
     "network") l2_tools_network_command ;;
+    "l1") l2_tools_l1_command ;;
+    "l1 start") l2_tools_l1_start_command ;;
+    "l1 stop") l2_tools_l1_stop_command ;;
+    "bc") l2_tools_bc_command ;;
+    "bc start") l2_tools_bc_start_command ;;
+    "bc stop") l2_tools_bc_stop_command ;;
+    "bc restore") l2_tools_bc_restore_command ;;
   esac
 }
 
