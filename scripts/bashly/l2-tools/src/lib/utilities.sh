@@ -37,3 +37,12 @@ check_pod() {
     kubectl -n xainet delete pod test-conn --now >/dev/null 2>&1
     success "$NAME on"
 }
+
+init_cluster() {
+    source_dir="$(cd -- "$(dirname -- "$0")" &>/dev/null && pwd)"
+    minikube_conf_dir=$source_dir/../minikube
+
+    set -a
+    source $minikube_conf_dir/.env
+    set +a
+}

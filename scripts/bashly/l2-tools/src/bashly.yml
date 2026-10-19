@@ -63,3 +63,37 @@ commands:
         help: restore bc
         examples:
           - l2-tools bc restore
+  - name: cluster
+    help: cluster utilities
+    commands:
+      - name: start
+        help: start cluster
+        flags:
+          - long: --cpus
+            short: -c
+            help: Amount of cpus to allocate to minikube
+            required: false
+            arg: cpus
+            default: "4"
+          - long: --memory
+            short: -m
+            help: Amount of memory to allocate to minikube
+            required: false
+            arg: memory
+            default: 8g
+        examples:
+          - l2-tools cluster start
+          - l2-tools cluster start -c 8 -m 16g
+      - name: stop
+        help: stop cluster
+        flags:
+          - long: --clean
+            short: -c
+            help: Delete cluster
+        examples:
+          - l2-tools cluster stop
+          - l2-tools cluster stop -c
+      - name: reboot
+        help: reboot cluster
+        examples:
+          - l2-tools cluster reboot

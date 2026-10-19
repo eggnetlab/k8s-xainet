@@ -25,6 +25,7 @@ l2_tools_usage() {
   printf "  %s   l1 utilities\n" "l1     "
   printf "  %s   l2 utilities\n" "l2     "
   printf "  %s   bc utilities\n" "bc     "
+  printf "  %s   cluster utilities\n" "cluster"
   echo
 
   if [[ -n "$long_usage" ]]; then
@@ -335,6 +336,116 @@ l2_tools_bc_restore_usage() {
   fi
 }
 
+l2_tools_cluster_usage() {
+  printf "l2-tools cluster - cluster utilities\n\n"
+
+  printf "%s\n" "Usage:"
+  printf "  l2-tools cluster COMMAND\n"
+  printf "  l2-tools cluster [COMMAND] --help | -h\n"
+  echo
+
+  printf "%s\n" "Commands:"
+  printf "  %s   start cluster\n" "start "
+  printf "  %s   stop cluster\n" "stop  "
+  printf "  %s   reboot cluster\n" "reboot"
+  echo
+
+  if [[ -n "$long_usage" ]]; then
+
+    printf "%s\n" "Options:"
+
+    printf "  %s\n" "--help, -h"
+    printf "    Show this help\n"
+    echo
+
+  fi
+}
+
+l2_tools_cluster_start_usage() {
+  printf "l2-tools cluster start - start cluster\n\n"
+
+  printf "%s\n" "Usage:"
+  printf "  l2-tools cluster start [OPTIONS]\n"
+  printf "  l2-tools cluster start --help | -h\n"
+  echo
+
+  if [[ -n "$long_usage" ]]; then
+
+    printf "%s\n" "Options:"
+
+    printf "  %s\n" "--cpus, -c CPUS"
+    printf "    Amount of cpus to allocate to minikube\n"
+    printf "    %s\n" "Default: 4"
+    echo
+
+    printf "  %s\n" "--memory, -m MEMORY"
+    printf "    Amount of memory to allocate to minikube\n"
+    printf "    %s\n" "Default: 8g"
+    echo
+
+    printf "  %s\n" "--help, -h"
+    printf "    Show this help\n"
+    echo
+
+    printf "%s\n" "Examples:"
+    printf "  l2-tools cluster start\n"
+    printf "  l2-tools cluster start -c 8 -m 16g\n"
+    echo
+
+  fi
+}
+
+l2_tools_cluster_stop_usage() {
+  printf "l2-tools cluster stop - stop cluster\n\n"
+
+  printf "%s\n" "Usage:"
+  printf "  l2-tools cluster stop [OPTIONS]\n"
+  printf "  l2-tools cluster stop --help | -h\n"
+  echo
+
+  if [[ -n "$long_usage" ]]; then
+
+    printf "%s\n" "Options:"
+
+    printf "  %s\n" "--clean, -c"
+    printf "    Delete cluster\n"
+    echo
+
+    printf "  %s\n" "--help, -h"
+    printf "    Show this help\n"
+    echo
+
+    printf "%s\n" "Examples:"
+    printf "  l2-tools cluster stop\n"
+    printf "  l2-tools cluster stop -c\n"
+    echo
+
+  fi
+}
+
+l2_tools_cluster_reboot_usage() {
+  printf "l2-tools cluster reboot - reboot cluster\n\n"
+
+  printf "%s\n" "Usage:"
+  printf "  l2-tools cluster reboot\n"
+  printf "  l2-tools cluster reboot --help | -h\n"
+  echo
+
+  if [[ -n "$long_usage" ]]; then
+
+    printf "%s\n" "Options:"
+
+    printf "  %s\n" "--help, -h"
+    printf "    Show this help\n"
+    echo
+
+    printf "%s\n" "Examples:"
+    printf "  l2-tools cluster reboot\n"
+    echo
+
+  fi
+}
+
 normalize_input() {
   local arg passthru flags
   passthru=false
@@ -456,6 +567,15 @@ check_pod() {
 
     kubectl -n xainet delete pod test-conn --now >/dev/null 2>&1
     success "$NAME on"
+}
+
+init_cluster() {
+    source_dir="$(cd -- "$(dirname -- "$0")" &>/dev/null && pwd)"
+    minikube_conf_dir=$source_dir/../minikube
+
+    set -a
+    source $minikube_conf_dir/.env
+    set +a
 }
 
 l2_tools_network_command() {
@@ -581,6 +701,63 @@ l2_tools_bc_restore_command() {
 
 }
 
+l2_tools_cluster_start_command() {
+
+  init_cluster
+
+  if [ ! "$(docker ps -q -f name=ek-kube)" ]; then
+      memory=${args['--memory']}
+      cpus=${args['--cpus']}
+
+      info "starting $MINIKUBE_PROFILE"
+
+      minikube start \
+          --profile $MINIKUBE_PROFILE \
+          --driver=docker \
+          --container-runtime=cri-o \
+          --kubernetes-version=$K8S_VERSION \
+          --network=$MINIKUBE_NETWORK_NAME \
+          --static-ip=$MINIKUBE_NETWORK_IP \
+          --addons="ingress","ingress-dns","registry" \
+          --memory $memory \
+          --disk-size 50g \
+          --cpus $cpus \
+          --mount-string="$minikube_conf_dir/conf:/mnt/config"
+
+      minikube profile $MINIKUBE_PROFILE
+
+      minikube ssh -- sudo ln -sf /mnt/config/registries.conf /etc/containers/registries.conf
+      minikube ssh -- sudo ln -sf /mnt/config/crio.conf /etc/crio/crio.conf.d/99-custom.conf
+      minikube ssh -- sudo systemctl restart crio
+
+      kubectl -n kube-system wait --for=condition=Ready node --all --timeout=120s
+  fi
+
+  success "$MINIKUBE_PROFILE has started on address $(minikube -p $MINIKUBE_PROFILE ip)"
+
+}
+
+l2_tools_cluster_stop_command() {
+
+  init_cluster
+
+  minikube stop -p $MINIKUBE_PROFILE
+
+  if [[ "${args['--clean']}" ]]; then
+    minikube delete -p $MINIKUBE_PROFILE
+  fi
+
+}
+
+l2_tools_cluster_reboot_command() {
+
+  source_dir="$(cd -- "$(dirname -- "$0")" &>/dev/null && pwd)"
+
+  $source_dir/l2-tools cluster stop
+  $source_dir/l2-tools cluster start
+
+}
+
 parse_requirements() {
   local key
 
@@ -635,6 +812,13 @@ parse_requirements() {
       action="bc"
       shift
       l2_tools_bc_parse_requirements "$@"
+      shift $#
+      ;;
+
+    cluster)
+      action="cluster"
+      shift
+      l2_tools_cluster_parse_requirements "$@"
       shift $#
       ;;
 
@@ -1465,6 +1649,291 @@ l2_tools_bc_restore_parse_requirements() {
 
 }
 
+l2_tools_cluster_parse_requirements() {
+  local key
+
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+      --help | -h)
+        long_usage=yes
+        l2_tools_cluster_usage
+        exit
+        ;;
+
+      *)
+        break
+        ;;
+
+    esac
+  done
+
+  action=${1:-}
+
+  case $action in
+    -*) ;;
+
+    start)
+      action="start"
+      shift
+      l2_tools_cluster_start_parse_requirements "$@"
+      shift $#
+      ;;
+
+    stop)
+      action="stop"
+      shift
+      l2_tools_cluster_stop_parse_requirements "$@"
+      shift $#
+      ;;
+
+    reboot)
+      action="reboot"
+      shift
+      l2_tools_cluster_reboot_parse_requirements "$@"
+      shift $#
+      ;;
+
+    "")
+      l2_tools_cluster_usage >&2
+      exit 1
+      ;;
+
+    *)
+      printf "invalid command: %s\n" "$action" >&2
+      exit 1
+      ;;
+
+  esac
+
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+
+      --)
+        shift
+        while [[ $# -gt 0 ]]; do
+          key="$1"
+
+          printf "invalid argument: %s\n" "$key" >&2
+          exit 1
+
+        done
+        break
+        ;;
+
+      -?*)
+        printf "invalid option: %s\n" "$key" >&2
+        exit 1
+        ;;
+
+      *)
+
+        printf "invalid argument: %s\n" "$key" >&2
+        exit 1
+
+        ;;
+
+    esac
+  done
+
+}
+
+l2_tools_cluster_start_parse_requirements() {
+  local key
+
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+      --help | -h)
+        long_usage=yes
+        l2_tools_cluster_start_usage
+        exit
+        ;;
+
+      *)
+        break
+        ;;
+
+    esac
+  done
+
+  action="cluster start"
+
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+
+      --cpus | -c)
+
+        if [[ -n ${2+x} ]]; then
+          args['--cpus']="$2"
+          shift
+          shift
+        else
+          printf "%s\n" "--cpus requires an argument: --cpus, -c CPUS" >&2
+          exit 1
+        fi
+        ;;
+
+      --memory | -m)
+
+        if [[ -n ${2+x} ]]; then
+          args['--memory']="$2"
+          shift
+          shift
+        else
+          printf "%s\n" "--memory requires an argument: --memory, -m MEMORY" >&2
+          exit 1
+        fi
+        ;;
+
+      --)
+        shift
+        while [[ $# -gt 0 ]]; do
+          key="$1"
+
+          printf "invalid argument: %s\n" "$key" >&2
+          exit 1
+
+        done
+        break
+        ;;
+
+      -?*)
+        printf "invalid option: %s\n" "$key" >&2
+        exit 1
+        ;;
+
+      *)
+
+        printf "invalid argument: %s\n" "$key" >&2
+        exit 1
+
+        ;;
+
+    esac
+  done
+
+  [[ -n ${args['--cpus']:-} ]] || args['--cpus']="4"
+  [[ -n ${args['--memory']:-} ]] || args['--memory']="8g"
+
+}
+
+l2_tools_cluster_stop_parse_requirements() {
+  local key
+
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+      --help | -h)
+        long_usage=yes
+        l2_tools_cluster_stop_usage
+        exit
+        ;;
+
+      *)
+        break
+        ;;
+
+    esac
+  done
+
+  action="cluster stop"
+
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+
+      --clean | -c)
+
+        args['--clean']=1
+        shift
+        ;;
+
+      --)
+        shift
+        while [[ $# -gt 0 ]]; do
+          key="$1"
+
+          printf "invalid argument: %s\n" "$key" >&2
+          exit 1
+
+        done
+        break
+        ;;
+
+      -?*)
+        printf "invalid option: %s\n" "$key" >&2
+        exit 1
+        ;;
+
+      *)
+
+        printf "invalid argument: %s\n" "$key" >&2
+        exit 1
+
+        ;;
+
+    esac
+  done
+
+}
+
+l2_tools_cluster_reboot_parse_requirements() {
+  local key
+
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+      --help | -h)
+        long_usage=yes
+        l2_tools_cluster_reboot_usage
+        exit
+        ;;
+
+      *)
+        break
+        ;;
+
+    esac
+  done
+
+  action="cluster reboot"
+
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+
+      --)
+        shift
+        while [[ $# -gt 0 ]]; do
+          key="$1"
+
+          printf "invalid argument: %s\n" "$key" >&2
+          exit 1
+
+        done
+        break
+        ;;
+
+      -?*)
+        printf "invalid option: %s\n" "$key" >&2
+        exit 1
+        ;;
+
+      *)
+
+        printf "invalid argument: %s\n" "$key" >&2
+        exit 1
+
+        ;;
+
+    esac
+  done
+
+}
+
 initialize() {
   declare -g version="0.1.0"
   set -e
@@ -1497,6 +1966,10 @@ run() {
     "bc start") l2_tools_bc_start_command ;;
     "bc stop") l2_tools_bc_stop_command ;;
     "bc restore") l2_tools_bc_restore_command ;;
+    "cluster") l2_tools_cluster_command ;;
+    "cluster start") l2_tools_cluster_start_command ;;
+    "cluster stop") l2_tools_cluster_stop_command ;;
+    "cluster reboot") l2_tools_cluster_reboot_command ;;
   esac
 }
 
