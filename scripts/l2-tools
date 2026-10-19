@@ -23,6 +23,7 @@ l2_tools_usage() {
   printf "%s\n" "Commands:"
   printf "  %s   \n" "network"
   printf "  %s   l1 utilities\n" "l1     "
+  printf "  %s   l2 utilities\n" "l2     "
   printf "  %s   bc utilities\n" "bc     "
   echo
 
@@ -141,6 +142,100 @@ l2_tools_l1_stop_usage() {
 
     printf "%s\n" "Examples:"
     printf "  l2-tools l1 stop\n"
+    echo
+
+  fi
+}
+
+l2_tools_l2_usage() {
+  printf "l2-tools l2 - l2 utilities\n\n"
+
+  printf "%s\n" "Usage:"
+  printf "  l2-tools l2 COMMAND\n"
+  printf "  l2-tools l2 [COMMAND] --help | -h\n"
+  echo
+
+  printf "%s\n" "Commands:"
+  printf "  %s   start l2\n" "start"
+  printf "  %s   stop l2\n" "stop "
+  printf "  %s   init l2\n" "init "
+  echo
+
+  if [[ -n "$long_usage" ]]; then
+
+    printf "%s\n" "Options:"
+
+    printf "  %s\n" "--help, -h"
+    printf "    Show this help\n"
+    echo
+
+  fi
+}
+
+l2_tools_l2_start_usage() {
+  printf "l2-tools l2 start - start l2\n\n"
+
+  printf "%s\n" "Usage:"
+  printf "  l2-tools l2 start\n"
+  printf "  l2-tools l2 start --help | -h\n"
+  echo
+
+  if [[ -n "$long_usage" ]]; then
+
+    printf "%s\n" "Options:"
+
+    printf "  %s\n" "--help, -h"
+    printf "    Show this help\n"
+    echo
+
+    printf "%s\n" "Examples:"
+    printf "  xai-bc l2 start\n"
+    echo
+
+  fi
+}
+
+l2_tools_l2_stop_usage() {
+  printf "l2-tools l2 stop - stop l2\n\n"
+
+  printf "%s\n" "Usage:"
+  printf "  l2-tools l2 stop\n"
+  printf "  l2-tools l2 stop --help | -h\n"
+  echo
+
+  if [[ -n "$long_usage" ]]; then
+
+    printf "%s\n" "Options:"
+
+    printf "  %s\n" "--help, -h"
+    printf "    Show this help\n"
+    echo
+
+    printf "%s\n" "Examples:"
+    printf "  xai-bc l2 stop\n"
+    echo
+
+  fi
+}
+
+l2_tools_l2_init_usage() {
+  printf "l2-tools l2 init - init l2\n\n"
+
+  printf "%s\n" "Usage:"
+  printf "  l2-tools l2 init\n"
+  printf "  l2-tools l2 init --help | -h\n"
+  echo
+
+  if [[ -n "$long_usage" ]]; then
+
+    printf "%s\n" "Options:"
+
+    printf "  %s\n" "--help, -h"
+    printf "    Show this help\n"
+    echo
+
+    printf "%s\n" "Examples:"
+    printf "  xai-bc l2 init\n"
     echo
 
   fi
@@ -333,6 +428,36 @@ init_l1() {
     set +a
 }
 
+init_l2() {
+    source_dir="$(cd -- "$(dirname -- "$0")" &>/dev/null && pwd)"
+    l2_conf_dir=$source_dir/../l2-conf
+
+    k8s_dir=$source_dir/../k8s/overlays/dev
+
+    set -e
+    set -a
+    source $l2_conf_dir/.env
+    set +a
+}
+
+check_pod() {
+    NAME=$1
+    PORT=$2
+    NAMESPACE=${3:-xainet}
+    FQDN="${NAME}.${NAMESPACE}.svc.cluster.local"
+
+    kubectl -n xainet run test-conn -q --image=busybox:1.36 --restart=Never -- sleep 300 >/dev/null 2>&1
+    kubectl -n xainet wait --for=condition=Ready pod/test-conn --timeout=10s >/dev/null 2>&1
+
+    while ! kubectl -n xainet exec test-conn -- nc -z "$FQDN" "$PORT" >/dev/null 2>&1; do
+        info "sleeping $NAME"
+        sleep "$SLEEP_LENGTH"
+    done
+
+    kubectl -n xainet delete pod test-conn --now >/dev/null 2>&1
+    success "$NAME on"
+}
+
 l2_tools_network_command() {
 
   network_name=${args['name']}
@@ -375,6 +500,58 @@ l2_tools_l1_stop_command() {
   init_l1
 
   kurtosis enclave rm -f $L1_NAME
+}
+
+l2_tools_l2_start_command() {
+
+  console "start l2"
+
+  init_l2
+
+  kubectl apply -k $k8s_dir/sequencer
+
+  check_pod $L2_SEQ_NAME $L2_SEQ_PORT_GETH
+  check_pod $L2_SEQ_NAME $L2_SEQ_PORT_NODE
+
+  kubectl apply -k $k8s_dir/services
+
+  check_pod $L2_REP_NAME $L2_REP_PORT_GETH
+  check_pod $L2_REP_NAME $L2_REP_PORT_NODE
+  check_pod $L2_GRAPH_NAME $L2_GRAPH_PORT
+
+  kubectl apply -k $k8s_dir/explorer
+
+}
+
+l2_tools_l2_stop_command() {
+
+  console "stop l2"
+
+  init_l2
+
+  kubectl delete \
+      -k $k8s_dir \
+      --ignore-not-found=true
+
+  $source_dir/xai-data psqldb restore graph,blockscout
+
+}
+
+l2_tools_l2_init_command() {
+
+  console "init l2"
+
+  init_l2
+
+  kubectl apply -k $k8s_dir/setup
+  kubectl apply -f $k8s_dir/init/init-l2.yaml
+  kubectl wait --for=condition=complete job/init-l2 -n xainet --timeout=300s
+
+  kubectl apply -f $k8s_dir/init/init-seq.yaml
+  kubectl apply -f $k8s_dir/init/init-rep.yaml
+  kubectl wait --for=condition=complete job/init-seq -n xainet --timeout=300s
+  kubectl wait --for=condition=complete job/init-rep -n xainet --timeout=300s
+
 }
 
 l2_tools_bc_start_command() {
@@ -444,6 +621,13 @@ parse_requirements() {
       action="l1"
       shift
       l2_tools_l1_parse_requirements "$@"
+      shift $#
+      ;;
+
+    l2)
+      action="l2"
+      shift
+      l2_tools_l2_parse_requirements "$@"
       shift $#
       ;;
 
@@ -777,6 +961,258 @@ l2_tools_l1_stop_parse_requirements() {
 
 }
 
+l2_tools_l2_parse_requirements() {
+  local key
+
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+      --help | -h)
+        long_usage=yes
+        l2_tools_l2_usage
+        exit
+        ;;
+
+      *)
+        break
+        ;;
+
+    esac
+  done
+
+  action=${1:-}
+
+  case $action in
+    -*) ;;
+
+    start)
+      action="start"
+      shift
+      l2_tools_l2_start_parse_requirements "$@"
+      shift $#
+      ;;
+
+    stop)
+      action="stop"
+      shift
+      l2_tools_l2_stop_parse_requirements "$@"
+      shift $#
+      ;;
+
+    init)
+      action="init"
+      shift
+      l2_tools_l2_init_parse_requirements "$@"
+      shift $#
+      ;;
+
+    "")
+      l2_tools_l2_usage >&2
+      exit 1
+      ;;
+
+    *)
+      printf "invalid command: %s\n" "$action" >&2
+      exit 1
+      ;;
+
+  esac
+
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+
+      --)
+        shift
+        while [[ $# -gt 0 ]]; do
+          key="$1"
+
+          printf "invalid argument: %s\n" "$key" >&2
+          exit 1
+
+        done
+        break
+        ;;
+
+      -?*)
+        printf "invalid option: %s\n" "$key" >&2
+        exit 1
+        ;;
+
+      *)
+
+        printf "invalid argument: %s\n" "$key" >&2
+        exit 1
+
+        ;;
+
+    esac
+  done
+
+}
+
+l2_tools_l2_start_parse_requirements() {
+  local key
+
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+      --help | -h)
+        long_usage=yes
+        l2_tools_l2_start_usage
+        exit
+        ;;
+
+      *)
+        break
+        ;;
+
+    esac
+  done
+
+  action="l2 start"
+
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+
+      --)
+        shift
+        while [[ $# -gt 0 ]]; do
+          key="$1"
+
+          printf "invalid argument: %s\n" "$key" >&2
+          exit 1
+
+        done
+        break
+        ;;
+
+      -?*)
+        printf "invalid option: %s\n" "$key" >&2
+        exit 1
+        ;;
+
+      *)
+
+        printf "invalid argument: %s\n" "$key" >&2
+        exit 1
+
+        ;;
+
+    esac
+  done
+
+}
+
+l2_tools_l2_stop_parse_requirements() {
+  local key
+
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+      --help | -h)
+        long_usage=yes
+        l2_tools_l2_stop_usage
+        exit
+        ;;
+
+      *)
+        break
+        ;;
+
+    esac
+  done
+
+  action="l2 stop"
+
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+
+      --)
+        shift
+        while [[ $# -gt 0 ]]; do
+          key="$1"
+
+          printf "invalid argument: %s\n" "$key" >&2
+          exit 1
+
+        done
+        break
+        ;;
+
+      -?*)
+        printf "invalid option: %s\n" "$key" >&2
+        exit 1
+        ;;
+
+      *)
+
+        printf "invalid argument: %s\n" "$key" >&2
+        exit 1
+
+        ;;
+
+    esac
+  done
+
+}
+
+l2_tools_l2_init_parse_requirements() {
+  local key
+
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+      --help | -h)
+        long_usage=yes
+        l2_tools_l2_init_usage
+        exit
+        ;;
+
+      *)
+        break
+        ;;
+
+    esac
+  done
+
+  action="l2 init"
+
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+
+      --)
+        shift
+        while [[ $# -gt 0 ]]; do
+          key="$1"
+
+          printf "invalid argument: %s\n" "$key" >&2
+          exit 1
+
+        done
+        break
+        ;;
+
+      -?*)
+        printf "invalid option: %s\n" "$key" >&2
+        exit 1
+        ;;
+
+      *)
+
+        printf "invalid argument: %s\n" "$key" >&2
+        exit 1
+
+        ;;
+
+    esac
+  done
+
+}
+
 l2_tools_bc_parse_requirements() {
   local key
 
@@ -1053,6 +1489,10 @@ run() {
     "l1") l2_tools_l1_command ;;
     "l1 start") l2_tools_l1_start_command ;;
     "l1 stop") l2_tools_l1_stop_command ;;
+    "l2") l2_tools_l2_command ;;
+    "l2 start") l2_tools_l2_start_command ;;
+    "l2 stop") l2_tools_l2_stop_command ;;
+    "l2 init") l2_tools_l2_init_command ;;
     "bc") l2_tools_bc_command ;;
     "bc start") l2_tools_bc_start_command ;;
     "bc stop") l2_tools_bc_stop_command ;;

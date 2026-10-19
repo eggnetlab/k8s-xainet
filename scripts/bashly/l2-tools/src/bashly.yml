@@ -33,6 +33,21 @@ commands:
         help: stop l1
         examples:
           - l2-tools l1 stop
+  - name: l2
+    help: l2 utilities
+    commands:
+      - name: start
+        help: start l2
+        examples:
+          - xai-bc l2 start
+      - name: stop
+        help: stop l2
+        examples:
+          - xai-bc l2 stop
+      - name: init
+        help: init l2
+        examples:
+          - xai-bc l2 init
   - name: bc
     help: bc utilities
     commands:
