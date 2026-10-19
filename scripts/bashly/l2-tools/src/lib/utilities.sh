@@ -1,23 +1,16 @@
-init_l1() {
-    source_dir="$(cd -- "$(dirname -- "$0")" &>/dev/null && pwd)"
-    l1_conf_dir=$source_dir/../l1-conf
+: ${SLEEP_LENGTH:=1}
 
-    set -e
-    set -a
-    source $l1_conf_dir/.env
-    set +a
-}
+check_serv() {
+    ADDR=$1
+    PORT=$2
+    ALIAS=$3
 
-init_l2() {
-    source_dir="$(cd -- "$(dirname -- "$0")" &>/dev/null && pwd)"
-    l2_conf_dir=$source_dir/../l2-conf
+    while ! nc -z $ADDR $PORT; do
+        info "sleeping $ALIAS"
+        sleep $SLEEP_LENGTH
+    done
 
-    k8s_dir=$source_dir/../k8s/overlays/dev
-
-    set -e
-    set -a
-    source $l2_conf_dir/.env
-    set +a
+    success "$ALIAS on"
 }
 
 check_pod() {
@@ -36,13 +29,4 @@ check_pod() {
 
     kubectl -n xainet delete pod test-conn --now >/dev/null 2>&1
     success "$NAME on"
-}
-
-init_cluster() {
-    source_dir="$(cd -- "$(dirname -- "$0")" &>/dev/null && pwd)"
-    minikube_conf_dir=$source_dir/../minikube
-
-    set -a
-    source $minikube_conf_dir/.env
-    set +a
 }

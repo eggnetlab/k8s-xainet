@@ -97,3 +97,19 @@ commands:
         help: reboot cluster
         examples:
           - l2-tools cluster reboot
+  - name: data
+    help: data utilities
+    commands:
+      - name: start
+        help: start data
+        examples:
+          - l2-tools data start
+      - name: stop
+        help: stop data
+        flags:
+          - long: --clean
+            short: -c
+            help: Delete cluster
+        examples:
+          - l2-tools data stop
+          - l2-tools data stop -c

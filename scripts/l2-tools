@@ -26,6 +26,7 @@ l2_tools_usage() {
   printf "  %s   l2 utilities\n" "l2     "
   printf "  %s   bc utilities\n" "bc     "
   printf "  %s   cluster utilities\n" "cluster"
+  printf "  %s   data utilities\n" "data   "
   echo
 
   if [[ -n "$long_usage" ]]; then
@@ -446,6 +447,81 @@ l2_tools_cluster_reboot_usage() {
   fi
 }
 
+l2_tools_data_usage() {
+  printf "l2-tools data - data utilities\n\n"
+
+  printf "%s\n" "Usage:"
+  printf "  l2-tools data COMMAND\n"
+  printf "  l2-tools data [COMMAND] --help | -h\n"
+  echo
+
+  printf "%s\n" "Commands:"
+  printf "  %s   start data\n" "start"
+  printf "  %s   stop data\n" "stop "
+  echo
+
+  if [[ -n "$long_usage" ]]; then
+
+    printf "%s\n" "Options:"
+
+    printf "  %s\n" "--help, -h"
+    printf "    Show this help\n"
+    echo
+
+  fi
+}
+
+l2_tools_data_start_usage() {
+  printf "l2-tools data start - start data\n\n"
+
+  printf "%s\n" "Usage:"
+  printf "  l2-tools data start\n"
+  printf "  l2-tools data start --help | -h\n"
+  echo
+
+  if [[ -n "$long_usage" ]]; then
+
+    printf "%s\n" "Options:"
+
+    printf "  %s\n" "--help, -h"
+    printf "    Show this help\n"
+    echo
+
+    printf "%s\n" "Examples:"
+    printf "  l2-tools data start\n"
+    echo
+
+  fi
+}
+
+l2_tools_data_stop_usage() {
+  printf "l2-tools data stop - stop data\n\n"
+
+  printf "%s\n" "Usage:"
+  printf "  l2-tools data stop [OPTIONS]\n"
+  printf "  l2-tools data stop --help | -h\n"
+  echo
+
+  if [[ -n "$long_usage" ]]; then
+
+    printf "%s\n" "Options:"
+
+    printf "  %s\n" "--clean, -c"
+    printf "    Delete cluster\n"
+    echo
+
+    printf "  %s\n" "--help, -h"
+    printf "    Show this help\n"
+    echo
+
+    printf "%s\n" "Examples:"
+    printf "  l2-tools data stop\n"
+    printf "  l2-tools data stop -c\n"
+    echo
+
+  fi
+}
+
 normalize_input() {
   local arg passthru flags
   passthru=false
@@ -523,12 +599,6 @@ cyan_underlined() { print_in_color "\e[4;36m" "$*"; }
 black_underlined() { print_in_color "\e[4;30m" "$*"; }
 white_underlined() { print_in_color "\e[4;37m" "$*"; }
 
-# Logging utilities
-console() { echo -e "$mark $1"; }
-info() { echo -e "$(cyan $mark "[INFO]" $1)"; }
-success() { echo -e "$(green $mark "[SUCCESS]" $1)"; }
-error() { echo -e "$(red $mark "[ERROR]" $1)"; }
-
 init_l1() {
     source_dir="$(cd -- "$(dirname -- "$0")" &>/dev/null && pwd)"
     l1_conf_dir=$source_dir/../l1-conf
@@ -551,6 +621,45 @@ init_l2() {
     set +a
 }
 
+init_cluster() {
+    source_dir="$(cd -- "$(dirname -- "$0")" &>/dev/null && pwd)"
+    minikube_conf_dir=$source_dir/../minikube
+
+    set -a
+    source $minikube_conf_dir/.env
+    set +a
+}
+
+init_data() {
+    source_dir="$(cd -- "$(dirname -- "$0")" &>/dev/null && pwd)"
+    data_conf_dir=$source_dir/../data
+
+    set -a
+    source $data_conf_dir/.env
+    set +a
+}
+
+# Logging utilities
+console() { echo -e "$mark $1"; }
+info() { echo -e "$(cyan $mark "[INFO]" $1)"; }
+success() { echo -e "$(green $mark "[SUCCESS]" $1)"; }
+error() { echo -e "$(red $mark "[ERROR]" $1)"; }
+
+: ${SLEEP_LENGTH:=1}
+
+check_serv() {
+    ADDR=$1
+    PORT=$2
+    ALIAS=$3
+
+    while ! nc -z $ADDR $PORT; do
+        info "sleeping $ALIAS"
+        sleep $SLEEP_LENGTH
+    done
+
+    success "$ALIAS on"
+}
+
 check_pod() {
     NAME=$1
     PORT=$2
@@ -567,15 +676,6 @@ check_pod() {
 
     kubectl -n xainet delete pod test-conn --now >/dev/null 2>&1
     success "$NAME on"
-}
-
-init_cluster() {
-    source_dir="$(cd -- "$(dirname -- "$0")" &>/dev/null && pwd)"
-    minikube_conf_dir=$source_dir/../minikube
-
-    set -a
-    source $minikube_conf_dir/.env
-    set +a
 }
 
 l2_tools_network_command() {
@@ -758,6 +858,34 @@ l2_tools_cluster_reboot_command() {
 
 }
 
+l2_tools_data_start_command() {
+
+  console "start data"
+
+  init_data
+
+  docker compose -f $data_conf_dir/docker-compose.yaml up -d
+  check_serv $PSQL_ADDRESS $PSQLDB_PORT $PSQL_ALIAS
+  check_serv $REDIS_ADDRESS $REDIS_PORT $REDIS_ALIAS
+  check_serv $IPFS_ADDRESS $IPFS_PORT $IPFS_ALIAS
+
+}
+
+l2_tools_data_stop_command() {
+
+  console "exec stop data"
+
+  init_data
+
+  ARGS=""
+  if [[ "${args['--clean']}" ]]; then
+    ARGS="-v"
+  fi
+
+  docker compose -f $data_conf_dir/docker-compose.yaml down $ARGS
+
+}
+
 parse_requirements() {
   local key
 
@@ -819,6 +947,13 @@ parse_requirements() {
       action="cluster"
       shift
       l2_tools_cluster_parse_requirements "$@"
+      shift $#
+      ;;
+
+    data)
+      action="data"
+      shift
+      l2_tools_data_parse_requirements "$@"
       shift $#
       ;;
 
@@ -1934,6 +2069,203 @@ l2_tools_cluster_reboot_parse_requirements() {
 
 }
 
+l2_tools_data_parse_requirements() {
+  local key
+
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+      --help | -h)
+        long_usage=yes
+        l2_tools_data_usage
+        exit
+        ;;
+
+      *)
+        break
+        ;;
+
+    esac
+  done
+
+  action=${1:-}
+
+  case $action in
+    -*) ;;
+
+    start)
+      action="start"
+      shift
+      l2_tools_data_start_parse_requirements "$@"
+      shift $#
+      ;;
+
+    stop)
+      action="stop"
+      shift
+      l2_tools_data_stop_parse_requirements "$@"
+      shift $#
+      ;;
+
+    "")
+      l2_tools_data_usage >&2
+      exit 1
+      ;;
+
+    *)
+      printf "invalid command: %s\n" "$action" >&2
+      exit 1
+      ;;
+
+  esac
+
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+
+      --)
+        shift
+        while [[ $# -gt 0 ]]; do
+          key="$1"
+
+          printf "invalid argument: %s\n" "$key" >&2
+          exit 1
+
+        done
+        break
+        ;;
+
+      -?*)
+        printf "invalid option: %s\n" "$key" >&2
+        exit 1
+        ;;
+
+      *)
+
+        printf "invalid argument: %s\n" "$key" >&2
+        exit 1
+
+        ;;
+
+    esac
+  done
+
+}
+
+l2_tools_data_start_parse_requirements() {
+  local key
+
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+      --help | -h)
+        long_usage=yes
+        l2_tools_data_start_usage
+        exit
+        ;;
+
+      *)
+        break
+        ;;
+
+    esac
+  done
+
+  action="data start"
+
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+
+      --)
+        shift
+        while [[ $# -gt 0 ]]; do
+          key="$1"
+
+          printf "invalid argument: %s\n" "$key" >&2
+          exit 1
+
+        done
+        break
+        ;;
+
+      -?*)
+        printf "invalid option: %s\n" "$key" >&2
+        exit 1
+        ;;
+
+      *)
+
+        printf "invalid argument: %s\n" "$key" >&2
+        exit 1
+
+        ;;
+
+    esac
+  done
+
+}
+
+l2_tools_data_stop_parse_requirements() {
+  local key
+
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+      --help | -h)
+        long_usage=yes
+        l2_tools_data_stop_usage
+        exit
+        ;;
+
+      *)
+        break
+        ;;
+
+    esac
+  done
+
+  action="data stop"
+
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+
+      --clean | -c)
+
+        args['--clean']=1
+        shift
+        ;;
+
+      --)
+        shift
+        while [[ $# -gt 0 ]]; do
+          key="$1"
+
+          printf "invalid argument: %s\n" "$key" >&2
+          exit 1
+
+        done
+        break
+        ;;
+
+      -?*)
+        printf "invalid option: %s\n" "$key" >&2
+        exit 1
+        ;;
+
+      *)
+
+        printf "invalid argument: %s\n" "$key" >&2
+        exit 1
+
+        ;;
+
+    esac
+  done
+
+}
+
 initialize() {
   declare -g version="0.1.0"
   set -e
@@ -1970,6 +2302,9 @@ run() {
     "cluster start") l2_tools_cluster_start_command ;;
     "cluster stop") l2_tools_cluster_stop_command ;;
     "cluster reboot") l2_tools_cluster_reboot_command ;;
+    "data") l2_tools_data_command ;;
+    "data start") l2_tools_data_start_command ;;
+    "data stop") l2_tools_data_stop_command ;;
   esac
 }
 
