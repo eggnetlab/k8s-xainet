@@ -1,0 +1,25 @@
+{
+    "name": "contracts",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "deploy": "tsx ddproxy.ts --deploy",
+        "generate": "tsx ddproxy.ts --generate",
+        "transfer": "tsx transfer.ts",
+        "entrypoint": "tsx entrypoint.ts"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "MIT",
+    "packageManager": "pnpm@10.32.1",
+    "dependencies": {
+        "@account-abstraction/contracts": "^0.7.0",
+        "viem": "^2.57.7"
+    },
+    "devDependencies": {
+        "@types/node": "^26.6.5",
+        "tsx": "^4.23.15",
+        "typescript": "^7.0.2"
+    }
+}

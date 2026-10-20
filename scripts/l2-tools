@@ -21,6 +21,8 @@ l2_tools_usage() {
   echo
 
   printf "%s\n" "Commands:"
+  printf "  %s   start local environment\n" "up     "
+  printf "  %s   stop local environment\n" "down   "
   printf "  %s   \n" "network"
   printf "  %s   l1 utilities\n" "l1     "
   printf "  %s   l2 utilities\n" "l2     "
@@ -38,6 +40,44 @@ l2_tools_usage() {
     echo
     printf "  %s\n" "--version, -v"
     printf "    Show version number\n"
+    echo
+
+  fi
+}
+
+l2_tools_up_usage() {
+  printf "l2-tools up - start local environment\n\n"
+
+  printf "%s\n" "Usage:"
+  printf "  l2-tools up\n"
+  printf "  l2-tools up --help | -h\n"
+  echo
+
+  if [[ -n "$long_usage" ]]; then
+
+    printf "%s\n" "Options:"
+
+    printf "  %s\n" "--help, -h"
+    printf "    Show this help\n"
+    echo
+
+  fi
+}
+
+l2_tools_down_usage() {
+  printf "l2-tools down - stop local environment\n\n"
+
+  printf "%s\n" "Usage:"
+  printf "  l2-tools down\n"
+  printf "  l2-tools down --help | -h\n"
+  echo
+
+  if [[ -n "$long_usage" ]]; then
+
+    printf "%s\n" "Options:"
+
+    printf "  %s\n" "--help, -h"
+    printf "    Show this help\n"
     echo
 
   fi
@@ -158,9 +198,10 @@ l2_tools_l2_usage() {
   echo
 
   printf "%s\n" "Commands:"
-  printf "  %s   start l2\n" "start"
-  printf "  %s   stop l2\n" "stop "
-  printf "  %s   init l2\n" "init "
+  printf "  %s   start l2\n" "start  "
+  printf "  %s   stop l2\n" "stop   "
+  printf "  %s   init l2\n" "init   "
+  printf "  %s   start the bundler\n" "bundler"
   echo
 
   if [[ -n "$long_usage" ]]; then
@@ -191,7 +232,7 @@ l2_tools_l2_start_usage() {
     echo
 
     printf "%s\n" "Examples:"
-    printf "  xai-bc l2 start\n"
+    printf "  l2-tools l2 start\n"
     echo
 
   fi
@@ -214,7 +255,7 @@ l2_tools_l2_stop_usage() {
     echo
 
     printf "%s\n" "Examples:"
-    printf "  xai-bc l2 stop\n"
+    printf "  l2-tools l2 stop\n"
     echo
 
   fi
@@ -237,7 +278,41 @@ l2_tools_l2_init_usage() {
     echo
 
     printf "%s\n" "Examples:"
-    printf "  xai-bc l2 init\n"
+    printf "  l2-tools l2 init\n"
+    echo
+
+  fi
+}
+
+l2_tools_l2_bundler_usage() {
+  printf "l2-tools l2 bundler - start the bundler\n\n"
+
+  printf "%s\n" "Usage:"
+  printf "  l2-tools l2 bundler [OPTIONS]\n"
+  printf "  l2-tools l2 bundler --help | -h\n"
+  echo
+
+  if [[ -n "$long_usage" ]]; then
+
+    printf "%s\n" "Options:"
+
+    printf "  %s\n" "--start, -r"
+    printf "    run the bundler\n"
+    printf "    %s\n" "Conflicts: --stop"
+    echo
+
+    printf "  %s\n" "--stop, -s"
+    printf "    stop the bundler\n"
+    printf "    %s\n" "Conflicts: --start"
+    echo
+
+    printf "  %s\n" "--help, -h"
+    printf "    Show this help\n"
+    echo
+
+    printf "%s\n" "Examples:"
+    printf "  l2-tools l2 bundler --start\n"
+    printf "  l2-tools l2 bundler --stop\n"
     echo
 
   fi
@@ -678,6 +753,28 @@ check_pod() {
     success "$NAME on"
 }
 
+l2_tools_up_command() {
+
+  source_dir="$(cd -- "$(dirname -- "$0")" &>/dev/null && pwd)"
+
+  $source_dir/l2-tools data start
+  $source_dir/l2-tools cluster start
+  $source_dir/l2-tools bc start
+
+}
+
+l2_tools_down_command() {
+
+  source_dir="$(cd -- "$(dirname -- "$0")" &>/dev/null && pwd)"
+
+  set +e
+
+  $source_dir/l2-tools bc stop
+  $source_dir/l2-tools cluster stop
+  $source_dir/l2-tools data stop -c
+
+}
+
 l2_tools_network_command() {
 
   network_name=${args['name']}
@@ -686,7 +783,11 @@ l2_tools_network_command() {
       info "network '$network_name' already exists"
   else
       subnet=${args['--subnet']}
-      docker network create $network_name --gateway=${subnet}.1 --subnet=${subnet}.0/24 --ip-range=${subnet}.0/25
+      docker network create $network_name \
+          --opt com.docker.network.driver.mtu=1400 \
+          --gateway=${subnet}.1 \
+          --subnet=${subnet}.0/24 \
+          --ip-range=${subnet}.0/25
       success "network '$network_name' created"
   fi
 
@@ -698,7 +799,7 @@ l2_tools_l1_start_command() {
 
   init_l1
 
-  kurtosis run github.com/ethpandaops/ethereum-package@5.0.1 \
+  kurtosis run github.com/ethpandaops/ethereum-package@6.1.0 \
       --args-file $l1_conf_dir/network_params.yaml \
       --enclave $L1_NAME
 
@@ -753,7 +854,7 @@ l2_tools_l2_stop_command() {
       -k $k8s_dir \
       --ignore-not-found=true
 
-  $source_dir/xai-data psqldb restore graph,blockscout
+  #$source_dir/xai-data psqldb restore graph,blockscout
 
 }
 
@@ -774,20 +875,38 @@ l2_tools_l2_init_command() {
 
 }
 
+l2_tools_l2_bundler_command() {
+
+  init_l2
+
+  if [[ "${args['--start']}" ]]; then
+      console "start l2 bundler"
+      kubectl apply -k $k8s_dir/bundler
+
+      check_pod $L2_BUNDLER_NAME $L2_BUNDLER_PORT
+  fi
+
+  if [[ "${args['--stop']}" ]]; then
+      console "stop l2 bundler"
+      kubectl delete -k $k8s_dir/bundler
+  fi
+
+}
+
 l2_tools_bc_start_command() {
 
   source_dir="$(cd -- "$(dirname -- "$0")" &>/dev/null && pwd)"
 
   $source_dir/l2-tools l1 start
-  #$source_dir/l2-tools l2 init
-  #$source_dir/l2-tools l2 start
+  $source_dir/l2-tools l2 init
+  $source_dir/l2-tools l2 start
 }
 
 l2_tools_bc_stop_command() {
 
   source_dir="$(cd -- "$(dirname -- "$0")" &>/dev/null && pwd)"
 
-  # $source_dir/l2-tools l2 stop
+  $source_dir/l2-tools l2 stop
   $source_dir/l2-tools l1 stop
 
 }
@@ -915,6 +1034,20 @@ parse_requirements() {
   case $action in
     -*) ;;
 
+    up)
+      action="up"
+      shift
+      l2_tools_up_parse_requirements "$@"
+      shift $#
+      ;;
+
+    down)
+      action="down"
+      shift
+      l2_tools_down_parse_requirements "$@"
+      shift $#
+      ;;
+
     network | n)
       action="network"
       shift
@@ -968,6 +1101,114 @@ parse_requirements() {
       ;;
 
   esac
+
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+
+      --)
+        shift
+        while [[ $# -gt 0 ]]; do
+          key="$1"
+
+          printf "invalid argument: %s\n" "$key" >&2
+          exit 1
+
+        done
+        break
+        ;;
+
+      -?*)
+        printf "invalid option: %s\n" "$key" >&2
+        exit 1
+        ;;
+
+      *)
+
+        printf "invalid argument: %s\n" "$key" >&2
+        exit 1
+
+        ;;
+
+    esac
+  done
+
+}
+
+l2_tools_up_parse_requirements() {
+  local key
+
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+      --help | -h)
+        long_usage=yes
+        l2_tools_up_usage
+        exit
+        ;;
+
+      *)
+        break
+        ;;
+
+    esac
+  done
+
+  action="up"
+
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+
+      --)
+        shift
+        while [[ $# -gt 0 ]]; do
+          key="$1"
+
+          printf "invalid argument: %s\n" "$key" >&2
+          exit 1
+
+        done
+        break
+        ;;
+
+      -?*)
+        printf "invalid option: %s\n" "$key" >&2
+        exit 1
+        ;;
+
+      *)
+
+        printf "invalid argument: %s\n" "$key" >&2
+        exit 1
+
+        ;;
+
+    esac
+  done
+
+}
+
+l2_tools_down_parse_requirements() {
+  local key
+
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+      --help | -h)
+        long_usage=yes
+        l2_tools_down_usage
+        exit
+        ;;
+
+      *)
+        break
+        ;;
+
+    esac
+  done
+
+  action="down"
 
   while [[ $# -gt 0 ]]; do
     key="$1"
@@ -1325,6 +1566,13 @@ l2_tools_l2_parse_requirements() {
       shift $#
       ;;
 
+    bundler)
+      action="bundler"
+      shift
+      l2_tools_l2_bundler_parse_requirements "$@"
+      shift $#
+      ;;
+
     "")
       l2_tools_l2_usage >&2
       exit 1
@@ -1502,6 +1750,82 @@ l2_tools_l2_init_parse_requirements() {
   while [[ $# -gt 0 ]]; do
     key="$1"
     case "$key" in
+
+      --)
+        shift
+        while [[ $# -gt 0 ]]; do
+          key="$1"
+
+          printf "invalid argument: %s\n" "$key" >&2
+          exit 1
+
+        done
+        break
+        ;;
+
+      -?*)
+        printf "invalid option: %s\n" "$key" >&2
+        exit 1
+        ;;
+
+      *)
+
+        printf "invalid argument: %s\n" "$key" >&2
+        exit 1
+
+        ;;
+
+    esac
+  done
+
+}
+
+l2_tools_l2_bundler_parse_requirements() {
+  local key
+
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+      --help | -h)
+        long_usage=yes
+        l2_tools_l2_bundler_usage
+        exit
+        ;;
+
+      *)
+        break
+        ;;
+
+    esac
+  done
+
+  action="l2 bundler"
+
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+
+      --start | -r)
+
+        if [[ -n "${args['--stop']:-}" ]]; then
+          printf "conflicting options: %s cannot be used with %s\n" "$key" "--stop" >&2
+          exit 1
+        fi
+
+        args['--start']=1
+        shift
+        ;;
+
+      --stop | -s)
+
+        if [[ -n "${args['--start']:-}" ]]; then
+          printf "conflicting options: %s cannot be used with %s\n" "$key" "--start" >&2
+          exit 1
+        fi
+
+        args['--stop']=1
+        shift
+        ;;
 
       --)
         shift
@@ -2286,6 +2610,8 @@ run() {
   parse_requirements "${input[@]}"
 
   case "$action" in
+    "up") l2_tools_up_command ;;
+    "down") l2_tools_down_command ;;
     "network") l2_tools_network_command ;;
     "l1") l2_tools_l1_command ;;
     "l1 start") l2_tools_l1_start_command ;;
@@ -2294,6 +2620,7 @@ run() {
     "l2 start") l2_tools_l2_start_command ;;
     "l2 stop") l2_tools_l2_stop_command ;;
     "l2 init") l2_tools_l2_init_command ;;
+    "l2 bundler") l2_tools_l2_bundler_command ;;
     "bc") l2_tools_bc_command ;;
     "bc start") l2_tools_bc_start_command ;;
     "bc stop") l2_tools_bc_stop_command ;;

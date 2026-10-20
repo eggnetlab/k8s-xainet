@@ -22,7 +22,7 @@ spec:
             - init
             - --datadir=/workspace/op-geth-data
             - --state.scheme=hash
-            - /workspace/config/genesis-.json
+            - /workspace/config/genesis.json
           volumeMounts:
             - mountPath: "/workspace/config"
               name: workdir-storage

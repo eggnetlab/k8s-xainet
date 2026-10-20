@@ -14,8 +14,8 @@ spec:
             claimName: l2-workdir
       containers:
         - name: task-pv-container
-          image: localhost:5000/l2-conf:dev
-          imagePullPolicy: Always
+          image: localhost/l2-conf:dev
+          imagePullPolicy: Never
           envFrom:
             - configMapRef:
                 name: blockchain-config-env

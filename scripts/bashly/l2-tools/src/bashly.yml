@@ -7,6 +7,10 @@ variables:
     value: "[@@@ L2-TOOLS]"
 
 commands:
+  - name: up
+    help: start local environment
+  - name: down
+    help: stop local environment
   - name: network
     alias: n
     args:
@@ -39,15 +43,29 @@ commands:
       - name: start
         help: start l2
         examples:
-          - xai-bc l2 start
+          - l2-tools l2 start
       - name: stop
         help: stop l2
         examples:
-          - xai-bc l2 stop
+          - l2-tools l2 stop
       - name: init
         help: init l2
         examples:
-          - xai-bc l2 init
+          - l2-tools l2 init
+      - name: bundler
+        help: start the bundler
+        flags:
+          - long: --start
+            short: -r
+            conflicts: [--stop]
+            help: run the bundler
+          - long: --stop
+            short: -s
+            conflicts: [--start]
+            help: stop the bundler
+        examples:
+          - l2-tools l2 bundler --start
+          - l2-tools l2 bundler --stop
   - name: bc
     help: bc utilities
     commands:

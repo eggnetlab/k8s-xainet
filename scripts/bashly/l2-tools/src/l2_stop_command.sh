@@ -6,4 +6,4 @@ kubectl delete \
     -k $k8s_dir \
     --ignore-not-found=true
 
-$source_dir/xai-data psqldb restore graph,blockscout
+#$source_dir/xai-data psqldb restore graph,blockscout
