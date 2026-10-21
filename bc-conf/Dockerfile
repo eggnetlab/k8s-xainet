@@ -9,7 +9,7 @@ ARG L2_CHAIN_ID
 
 WORKDIR /network-data
 
-ADD ./genesis-l1.json /tmp/genesis-l1.json
+COPY ./genesis-l1.json /tmp/genesis-l1.json
 
 RUN op-deployer init \
     --l1-chain-id $(jq -r '.config.chainId' /tmp/genesis-l1.json) \
@@ -17,8 +17,8 @@ RUN op-deployer init \
     --workdir /network-data \
     --intent-type custom
 
-ADD ./intent.toml /network-data/intent.toml
-ADD ./genesis-l1.json /network-data/genesis-l1.json
-ADD ./init.sh /usr/local/bin
+COPY ./intent.toml /network-data/intent.toml
+COPY ./genesis-l1.json /network-data/genesis-l1.json
+COPY ./init.sh /usr/local/bin
 
 ENTRYPOINT ["init.sh"]
