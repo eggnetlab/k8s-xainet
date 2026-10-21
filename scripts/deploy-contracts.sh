@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 source_dir="$(cd -- "$(dirname -- "$0")" &>/dev/null && pwd)"
 
 L2_CHAIN_ID=$1

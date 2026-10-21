@@ -19,7 +19,7 @@ spec:
       serviceAccountName: xainet-sa
       containers:
         - name: op-batcher
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           envFrom:
             - configMapRef:
                 name: blockchain-config-env

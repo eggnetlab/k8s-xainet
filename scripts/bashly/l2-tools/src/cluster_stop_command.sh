@@ -1,7 +1,10 @@
 init_cluster
 
-minikube stop -p $MINIKUBE_PROFILE
+MINIKUBE_PROFILE="${args['--profile']}"
+
+minikube -p $MINIKUBE_PROFILE ssh -- sudo nft delete table ip localhost-masq
+minikube -p $MINIKUBE_PROFILE stop
 
 if [[ "${args['--clean']}" ]]; then
-  minikube delete -p $MINIKUBE_PROFILE
+  minikube -p $MINIKUBE_PROFILE delete
 fi

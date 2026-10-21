@@ -1,4 +1,4 @@
-init_l2
+init_bc
 
 if [[ "${args['--start']}" ]]; then
     console "start l2 bundler"

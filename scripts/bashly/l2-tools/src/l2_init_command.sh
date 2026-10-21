@@ -1,6 +1,6 @@
 console "init l2"
 
-init_l2
+init_bc
 
 kubectl apply -k $k8s_dir/setup
 kubectl apply -f $k8s_dir/init/init-l2.yaml

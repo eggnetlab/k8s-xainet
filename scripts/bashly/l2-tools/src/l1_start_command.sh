@@ -1,9 +1,9 @@
 console "start l1"
 
-init_l1
+init_bc
 
 kurtosis run github.com/ethpandaops/ethereum-package@6.1.0 \
-    --args-file $l1_conf_dir/network_params.yaml \
+    --args-file $bc_conf_dir/network_params.yaml \
     --enclave $L1_NAME
 
 GETH_CONTAINER_NAME=$(docker ps --filter "label=kurtosis_service_name=el-1-geth-lighthouse" --format "{{.Names}}")

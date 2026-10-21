@@ -19,6 +19,8 @@ spec:
         fsGroup: 1000   # allinea all'utente dell'immagine
       containers:
         - name: op-geth
+          image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-geth:v1.101702.2
+          imagePullPolicy: IfNotPresent
           args:
             - --datadir=/workspace/op-geth-data
             - --http
@@ -45,6 +47,8 @@ spec:
             timeoutSeconds: 3
             failureThreshold: 6
         - name: op-node
+          image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-node:v1.19.4
+          imagePullPolicy: IfNotPresent
           envFrom:
             - configMapRef:
                 name: blockchain-config-env

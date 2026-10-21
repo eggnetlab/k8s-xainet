@@ -1,13 +1,16 @@
 import { parseArgs } from 'node:util';
 import {
-    createPublicClient,
-    createWalletClient,
-    defineChain,
-    http,
     parseEther,
     parseGwei,
 } from 'viem';
-import { privateKeyToAccount } from 'viem/accounts';
+import { buildClients } from './utils/chain';
+import {
+    parseAddress,
+    parseChainId,
+    parseHex,
+    runIfMain,
+} from './utils/cli';
+import { waitForSuccess } from './utils/tx';
 
 async function main(argv: string[] = process.argv.slice(2)) {
     const {values} = parseArgs({
@@ -37,29 +40,22 @@ async function main(argv: string[] = process.argv.slice(2)) {
         },
     });
 
-    const privateChain = defineChain({
-        id: Number(values['chain-id']!),
-        name: values['chain-name']!,
-        nativeCurrency: {
-            name: 'Ether',
-            symbol: 'ETH',
-            decimals: 18,
+    // Create the clients used to send transactions
+    const {
+        publicClient,
+        walletClient,
+    } = buildClients(
+        {
+            chainId: parseChainId(values['chain-id']!),
+            chainName: values['chain-name']!,
+            rpcUrl: values['rpc-url']!,
         },
-        rpcUrls: {
-            default: {http: [values['rpc-url']!]}, // RPC of your L2
-        },
-    });
-
-    // Create the client used to send transactions
-    const walletClient = createWalletClient({
-        account: privateKeyToAccount(values['sender-key']! as `0x${string}`),
-        chain: privateChain,
-        transport: http(),
-    });
+        parseHex('sender-key', values['sender-key']!, 32),
+    );
 
     // Execute the transaction (equivalent to cast send)
     const hash = await walletClient.sendTransaction({
-        to: values['receiver-address']! as `0x${string}`,
+        to: parseAddress('receiver-address', values['receiver-address']!),
         value: parseEther('10'),
         gas: 21000n,
         maxPriorityFeePerGas: parseGwei('1'),
@@ -68,21 +64,9 @@ async function main(argv: string[] = process.argv.slice(2)) {
 
     console.log('Transaction hash:', hash);
 
-    const publicClient = createPublicClient({transport: http(values['rpc-url']!)});
-
-    const receipt = await publicClient.waitForTransactionReceipt({hash: hash});
-    if (!receipt || receipt.status !== 'success') {
-        throw new Error('Transfer failed');
-    }
+    const receipt = await waitForSuccess(publicClient, hash, 'Transfer failed');
 
     console.log(`Transfer succeded (block ${receipt.blockNumber}).`);
 }
 
-// Run main() only if the file is launched directly (CommonJS)
-if (require.main === module) {
-    main()
-        .catch((err) => {
-            console.error(err instanceof Error ? err.message : err);
-            process.exit(1);
-        });
-}
+runIfMain(module, () => main());

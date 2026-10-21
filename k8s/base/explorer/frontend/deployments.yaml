@@ -16,6 +16,7 @@ spec:
       containers:
         - name: frontend
           image: ghcr.io/blockscout/frontend:v2.3.5
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
               name: http

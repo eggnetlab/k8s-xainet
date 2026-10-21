@@ -21,8 +21,6 @@ l2_tools_usage() {
   echo
 
   printf "%s\n" "Commands:"
-  printf "  %s   start local environment\n" "up     "
-  printf "  %s   stop local environment\n" "down   "
   printf "  %s   \n" "network"
   printf "  %s   l1 utilities\n" "l1     "
   printf "  %s   l2 utilities\n" "l2     "
@@ -40,44 +38,6 @@ l2_tools_usage() {
     echo
     printf "  %s\n" "--version, -v"
     printf "    Show version number\n"
-    echo
-
-  fi
-}
-
-l2_tools_up_usage() {
-  printf "l2-tools up - start local environment\n\n"
-
-  printf "%s\n" "Usage:"
-  printf "  l2-tools up\n"
-  printf "  l2-tools up --help | -h\n"
-  echo
-
-  if [[ -n "$long_usage" ]]; then
-
-    printf "%s\n" "Options:"
-
-    printf "  %s\n" "--help, -h"
-    printf "    Show this help\n"
-    echo
-
-  fi
-}
-
-l2_tools_down_usage() {
-  printf "l2-tools down - stop local environment\n\n"
-
-  printf "%s\n" "Usage:"
-  printf "  l2-tools down\n"
-  printf "  l2-tools down --help | -h\n"
-  echo
-
-  if [[ -n "$long_usage" ]]; then
-
-    printf "%s\n" "Options:"
-
-    printf "  %s\n" "--help, -h"
-    printf "    Show this help\n"
     echo
 
   fi
@@ -421,9 +381,8 @@ l2_tools_cluster_usage() {
   echo
 
   printf "%s\n" "Commands:"
-  printf "  %s   start cluster\n" "start "
-  printf "  %s   stop cluster\n" "stop  "
-  printf "  %s   reboot cluster\n" "reboot"
+  printf "  %s   start cluster\n" "start"
+  printf "  %s   stop cluster\n" "stop "
   echo
 
   if [[ -n "$long_usage" ]]; then
@@ -449,6 +408,18 @@ l2_tools_cluster_start_usage() {
 
     printf "%s\n" "Options:"
 
+    printf "  %s\n" "--profile, -p PROFILE (required)"
+    printf "    Profile name to use\n"
+    echo
+
+    printf "  %s\n" "--network, -n NETWORK (required)"
+    printf "    Network name to use\n"
+    echo
+
+    printf "  %s\n" "--ip-address, -a IP-ADDRESS (required)"
+    printf "    Ip address to use\n"
+    echo
+
     printf "  %s\n" "--cpus, -c CPUS"
     printf "    Amount of cpus to allocate to minikube\n"
     printf "    %s\n" "Default: 4"
@@ -464,8 +435,8 @@ l2_tools_cluster_start_usage() {
     echo
 
     printf "%s\n" "Examples:"
-    printf "  l2-tools cluster start\n"
-    printf "  l2-tools cluster start -c 8 -m 16g\n"
+    printf "  l2-tools cluster start -p l2-kube -n l2-kube-net -a 192.168.1.100\n"
+    printf "  l2-tools cluster start -p l2-kube -n l2-kube-net -a 192.168.1.100 -c 8 -m 16g\n"
     echo
 
   fi
@@ -483,6 +454,10 @@ l2_tools_cluster_stop_usage() {
 
     printf "%s\n" "Options:"
 
+    printf "  %s\n" "--profile, -p PROFILE (required)"
+    printf "    Profile name to use\n"
+    echo
+
     printf "  %s\n" "--clean, -c"
     printf "    Delete cluster\n"
     echo
@@ -494,29 +469,6 @@ l2_tools_cluster_stop_usage() {
     printf "%s\n" "Examples:"
     printf "  l2-tools cluster stop\n"
     printf "  l2-tools cluster stop -c\n"
-    echo
-
-  fi
-}
-
-l2_tools_cluster_reboot_usage() {
-  printf "l2-tools cluster reboot - reboot cluster\n\n"
-
-  printf "%s\n" "Usage:"
-  printf "  l2-tools cluster reboot\n"
-  printf "  l2-tools cluster reboot --help | -h\n"
-  echo
-
-  if [[ -n "$long_usage" ]]; then
-
-    printf "%s\n" "Options:"
-
-    printf "  %s\n" "--help, -h"
-    printf "    Show this help\n"
-    echo
-
-    printf "%s\n" "Examples:"
-    printf "  l2-tools cluster reboot\n"
     echo
 
   fi
@@ -674,25 +626,14 @@ cyan_underlined() { print_in_color "\e[4;36m" "$*"; }
 black_underlined() { print_in_color "\e[4;30m" "$*"; }
 white_underlined() { print_in_color "\e[4;37m" "$*"; }
 
-init_l1() {
+init_bc() {
     source_dir="$(cd -- "$(dirname -- "$0")" &>/dev/null && pwd)"
-    l1_conf_dir=$source_dir/../l1-conf
-
-    set -e
-    set -a
-    source $l1_conf_dir/.env
-    set +a
-}
-
-init_l2() {
-    source_dir="$(cd -- "$(dirname -- "$0")" &>/dev/null && pwd)"
-    l2_conf_dir=$source_dir/../l2-conf
-
+    bc_conf_dir=$source_dir/../bc-conf
     k8s_dir=$source_dir/../k8s/overlays/dev
 
     set -e
     set -a
-    source $l2_conf_dir/.env
+    source $bc_conf_dir/.env
     set +a
 }
 
@@ -753,28 +694,6 @@ check_pod() {
     success "$NAME on"
 }
 
-l2_tools_up_command() {
-
-  source_dir="$(cd -- "$(dirname -- "$0")" &>/dev/null && pwd)"
-
-  $source_dir/l2-tools data start
-  $source_dir/l2-tools cluster start
-  $source_dir/l2-tools bc start
-
-}
-
-l2_tools_down_command() {
-
-  source_dir="$(cd -- "$(dirname -- "$0")" &>/dev/null && pwd)"
-
-  set +e
-
-  $source_dir/l2-tools bc stop
-  $source_dir/l2-tools cluster stop
-  $source_dir/l2-tools data stop -c
-
-}
-
 l2_tools_network_command() {
 
   network_name=${args['name']}
@@ -797,10 +716,10 @@ l2_tools_l1_start_command() {
 
   console "start l1"
 
-  init_l1
+  init_bc
 
   kurtosis run github.com/ethpandaops/ethereum-package@6.1.0 \
-      --args-file $l1_conf_dir/network_params.yaml \
+      --args-file $bc_conf_dir/network_params.yaml \
       --enclave $L1_NAME
 
   GETH_CONTAINER_NAME=$(docker ps --filter "label=kurtosis_service_name=el-1-geth-lighthouse" --format "{{.Names}}")
@@ -818,7 +737,7 @@ l2_tools_l1_stop_command() {
 
   console "stop l1"
 
-  init_l1
+  init_bc
 
   kurtosis enclave rm -f $L1_NAME
 }
@@ -827,7 +746,7 @@ l2_tools_l2_start_command() {
 
   console "start l2"
 
-  init_l2
+  init_bc
 
   kubectl apply -k $k8s_dir/sequencer
 
@@ -848,13 +767,11 @@ l2_tools_l2_stop_command() {
 
   console "stop l2"
 
-  init_l2
+  init_bc
 
   kubectl delete \
       -k $k8s_dir \
       --ignore-not-found=true
-
-  #$source_dir/xai-data psqldb restore graph,blockscout
 
 }
 
@@ -862,7 +779,7 @@ l2_tools_l2_init_command() {
 
   console "init l2"
 
-  init_l2
+  init_bc
 
   kubectl apply -k $k8s_dir/setup
   kubectl apply -f $k8s_dir/init/init-l2.yaml
@@ -877,7 +794,7 @@ l2_tools_l2_init_command() {
 
 l2_tools_l2_bundler_command() {
 
-  init_l2
+  init_bc
 
   if [[ "${args['--start']}" ]]; then
       console "start l2 bundler"
@@ -915,8 +832,8 @@ l2_tools_bc_restore_command() {
 
   source_dir="$(cd -- "$(dirname -- "$0")" &>/dev/null && pwd)"
 
-  $source_dir/l2-tools bc stop -o
-  $source_dir/l2-tools bc start -o
+  $source_dir/l2-tools bc stop
+  $source_dir/l2-tools bc start
 
 }
 
@@ -924,7 +841,9 @@ l2_tools_cluster_start_command() {
 
   init_cluster
 
-  if [ ! "$(docker ps -q -f name=ek-kube)" ]; then
+  MINIKUBE_PROFILE="${args['--profile']}"
+
+  if [ ! "$(docker ps -q -f name=$MINIKUBE_PROFILE)" ]; then
       memory=${args['--memory']}
       cpus=${args['--cpus']}
 
@@ -935,19 +854,20 @@ l2_tools_cluster_start_command() {
           --driver=docker \
           --container-runtime=cri-o \
           --kubernetes-version=$K8S_VERSION \
-          --network=$MINIKUBE_NETWORK_NAME \
-          --static-ip=$MINIKUBE_NETWORK_IP \
+          --network=${args['--network']} \
+          --static-ip=${args['--ip-address']} \
           --addons="ingress","ingress-dns","registry" \
           --memory $memory \
           --disk-size 50g \
           --cpus $cpus \
           --mount-string="$minikube_conf_dir/conf:/mnt/config"
 
-      minikube profile $MINIKUBE_PROFILE
+      minikube -p $MINIKUBE_PROFILE ssh -- sudo ln -sf /mnt/config/registries.conf /etc/containers/registries.conf.d/zz-custom.conf
+      minikube -p $MINIKUBE_PROFILE ssh -- sudo ln -sf /mnt/config/crio.conf /etc/crio/crio.conf.d/zz-custom.conf
+      minikube -p $MINIKUBE_PROFILE ssh -- sudo systemctl restart crio
 
-      minikube ssh -- sudo ln -sf /mnt/config/registries.conf /etc/containers/registries.conf
-      minikube ssh -- sudo ln -sf /mnt/config/crio.conf /etc/crio/crio.conf.d/99-custom.conf
-      minikube ssh -- sudo systemctl restart crio
+      minikube -p $MINIKUBE_PROFILE ssh -- sudo sysctl -w net.ipv4.conf.all.route_localnet=1
+      minikube -p $MINIKUBE_PROFILE ssh -- "sudo nft 'add table ip localhost-masq; add chain ip localhost-masq postrouting { type nat hook postrouting priority srcnat; policy accept; }; add rule ip localhost-masq postrouting ip saddr 127.0.0.1 ip daddr != 127.0.0.0/8 masquerade'"
 
       kubectl -n kube-system wait --for=condition=Ready node --all --timeout=120s
   fi
@@ -960,20 +880,14 @@ l2_tools_cluster_stop_command() {
 
   init_cluster
 
-  minikube stop -p $MINIKUBE_PROFILE
+  MINIKUBE_PROFILE="${args['--profile']}"
+
+  minikube -p $MINIKUBE_PROFILE ssh -- sudo nft delete table ip localhost-masq
+  minikube -p $MINIKUBE_PROFILE stop
 
   if [[ "${args['--clean']}" ]]; then
-    minikube delete -p $MINIKUBE_PROFILE
+    minikube -p $MINIKUBE_PROFILE delete
   fi
-
-}
-
-l2_tools_cluster_reboot_command() {
-
-  source_dir="$(cd -- "$(dirname -- "$0")" &>/dev/null && pwd)"
-
-  $source_dir/l2-tools cluster stop
-  $source_dir/l2-tools cluster start
 
 }
 
@@ -1034,20 +948,6 @@ parse_requirements() {
   case $action in
     -*) ;;
 
-    up)
-      action="up"
-      shift
-      l2_tools_up_parse_requirements "$@"
-      shift $#
-      ;;
-
-    down)
-      action="down"
-      shift
-      l2_tools_down_parse_requirements "$@"
-      shift $#
-      ;;
-
     network | n)
       action="network"
       shift
@@ -1101,114 +1001,6 @@ parse_requirements() {
       ;;
 
   esac
-
-  while [[ $# -gt 0 ]]; do
-    key="$1"
-    case "$key" in
-
-      --)
-        shift
-        while [[ $# -gt 0 ]]; do
-          key="$1"
-
-          printf "invalid argument: %s\n" "$key" >&2
-          exit 1
-
-        done
-        break
-        ;;
-
-      -?*)
-        printf "invalid option: %s\n" "$key" >&2
-        exit 1
-        ;;
-
-      *)
-
-        printf "invalid argument: %s\n" "$key" >&2
-        exit 1
-
-        ;;
-
-    esac
-  done
-
-}
-
-l2_tools_up_parse_requirements() {
-  local key
-
-  while [[ $# -gt 0 ]]; do
-    key="$1"
-    case "$key" in
-      --help | -h)
-        long_usage=yes
-        l2_tools_up_usage
-        exit
-        ;;
-
-      *)
-        break
-        ;;
-
-    esac
-  done
-
-  action="up"
-
-  while [[ $# -gt 0 ]]; do
-    key="$1"
-    case "$key" in
-
-      --)
-        shift
-        while [[ $# -gt 0 ]]; do
-          key="$1"
-
-          printf "invalid argument: %s\n" "$key" >&2
-          exit 1
-
-        done
-        break
-        ;;
-
-      -?*)
-        printf "invalid option: %s\n" "$key" >&2
-        exit 1
-        ;;
-
-      *)
-
-        printf "invalid argument: %s\n" "$key" >&2
-        exit 1
-
-        ;;
-
-    esac
-  done
-
-}
-
-l2_tools_down_parse_requirements() {
-  local key
-
-  while [[ $# -gt 0 ]]; do
-    key="$1"
-    case "$key" in
-      --help | -h)
-        long_usage=yes
-        l2_tools_down_usage
-        exit
-        ;;
-
-      *)
-        break
-        ;;
-
-    esac
-  done
-
-  action="down"
 
   while [[ $# -gt 0 ]]; do
     key="$1"
@@ -2146,13 +1938,6 @@ l2_tools_cluster_parse_requirements() {
       shift $#
       ;;
 
-    reboot)
-      action="reboot"
-      shift
-      l2_tools_cluster_reboot_parse_requirements "$@"
-      shift $#
-      ;;
-
     "")
       l2_tools_cluster_usage >&2
       exit 1
@@ -2223,6 +2008,42 @@ l2_tools_cluster_start_parse_requirements() {
     key="$1"
     case "$key" in
 
+      --profile | -p)
+
+        if [[ -n ${2+x} ]]; then
+          args['--profile']="$2"
+          shift
+          shift
+        else
+          printf "%s\n" "--profile requires an argument: --profile, -p PROFILE" >&2
+          exit 1
+        fi
+        ;;
+
+      --network | -n)
+
+        if [[ -n ${2+x} ]]; then
+          args['--network']="$2"
+          shift
+          shift
+        else
+          printf "%s\n" "--network requires an argument: --network, -n NETWORK" >&2
+          exit 1
+        fi
+        ;;
+
+      --ip-address | -a)
+
+        if [[ -n ${2+x} ]]; then
+          args['--ip-address']="$2"
+          shift
+          shift
+        else
+          printf "%s\n" "--ip-address requires an argument: --ip-address, -a IP-ADDRESS" >&2
+          exit 1
+        fi
+        ;;
+
       --cpus | -c)
 
         if [[ -n ${2+x} ]]; then
@@ -2274,6 +2095,19 @@ l2_tools_cluster_start_parse_requirements() {
     esac
   done
 
+  if [[ -z ${args['--profile']+x} ]]; then
+    printf "missing required flag: --profile, -p PROFILE\n" >&2
+    exit 1
+  fi
+  if [[ -z ${args['--network']+x} ]]; then
+    printf "missing required flag: --network, -n NETWORK\n" >&2
+    exit 1
+  fi
+  if [[ -z ${args['--ip-address']+x} ]]; then
+    printf "missing required flag: --ip-address, -a IP-ADDRESS\n" >&2
+    exit 1
+  fi
+
   [[ -n ${args['--cpus']:-} ]] || args['--cpus']="4"
   [[ -n ${args['--memory']:-} ]] || args['--memory']="8g"
 
@@ -2303,6 +2137,18 @@ l2_tools_cluster_stop_parse_requirements() {
   while [[ $# -gt 0 ]]; do
     key="$1"
     case "$key" in
+
+      --profile | -p)
+
+        if [[ -n ${2+x} ]]; then
+          args['--profile']="$2"
+          shift
+          shift
+        else
+          printf "%s\n" "--profile requires an argument: --profile, -p PROFILE" >&2
+          exit 1
+        fi
+        ;;
 
       --clean | -c)
 
@@ -2337,59 +2183,10 @@ l2_tools_cluster_stop_parse_requirements() {
     esac
   done
 
-}
-
-l2_tools_cluster_reboot_parse_requirements() {
-  local key
-
-  while [[ $# -gt 0 ]]; do
-    key="$1"
-    case "$key" in
-      --help | -h)
-        long_usage=yes
-        l2_tools_cluster_reboot_usage
-        exit
-        ;;
-
-      *)
-        break
-        ;;
-
-    esac
-  done
-
-  action="cluster reboot"
-
-  while [[ $# -gt 0 ]]; do
-    key="$1"
-    case "$key" in
-
-      --)
-        shift
-        while [[ $# -gt 0 ]]; do
-          key="$1"
-
-          printf "invalid argument: %s\n" "$key" >&2
-          exit 1
-
-        done
-        break
-        ;;
-
-      -?*)
-        printf "invalid option: %s\n" "$key" >&2
-        exit 1
-        ;;
-
-      *)
-
-        printf "invalid argument: %s\n" "$key" >&2
-        exit 1
-
-        ;;
-
-    esac
-  done
+  if [[ -z ${args['--profile']+x} ]]; then
+    printf "missing required flag: --profile, -p PROFILE\n" >&2
+    exit 1
+  fi
 
 }
 
@@ -2610,8 +2407,6 @@ run() {
   parse_requirements "${input[@]}"
 
   case "$action" in
-    "up") l2_tools_up_command ;;
-    "down") l2_tools_down_command ;;
     "network") l2_tools_network_command ;;
     "l1") l2_tools_l1_command ;;
     "l1 start") l2_tools_l1_start_command ;;
@@ -2628,7 +2423,6 @@ run() {
     "cluster") l2_tools_cluster_command ;;
     "cluster start") l2_tools_cluster_start_command ;;
     "cluster stop") l2_tools_cluster_stop_command ;;
-    "cluster reboot") l2_tools_cluster_reboot_command ;;
     "data") l2_tools_data_command ;;
     "data start") l2_tools_data_start_command ;;
     "data stop") l2_tools_data_stop_command ;;

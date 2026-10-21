@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -e
+
 L1_CHAIN_ID=$1
 L1_RPC_URL=$2
 L2_CHAIN_ID=$3

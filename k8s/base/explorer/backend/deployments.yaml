@@ -18,6 +18,7 @@ spec:
       containers:
         - name: backend
           image: ghcr.io/blockscout/blockscout-optimism:9.0.2
+          imagePullPolicy: IfNotPresent
           command: ["/bin/sh", "-c"]
           args:
             - >-

@@ -9,6 +9,13 @@ import {
     toHex,
     toRlp,
 } from 'viem';
+import { runIfMain } from './utils/cli';
+import {
+    assertCodeDeployed,
+    assertFunds,
+    hasCode,
+    waitForSuccess,
+} from './utils/tx';
 
 /**
  * Generates a pre-signed EIP-155 legacy transaction to deploy the
@@ -167,8 +174,7 @@ async function deploy(
     const client = createPublicClient({transport: http(rpcUrl)});
 
     // Preliminary check: is the proxy already present?
-    const existingCode = await client.getCode({address: result.proxyAddress});
-    if (existingCode && existingCode !== '0x') {
+    if (await hasCode(client, result.proxyAddress)) {
         log(`Proxy already present at ${result.proxyAddress}, no deployment needed.`);
         return {
             alreadyDeployed: true,
@@ -177,13 +183,7 @@ async function deploy(
     }
 
     // Check the funds of the throwaway signer
-    const balance = await client.getBalance({address: result.signerAddress});
-    if (balance < result.fundingRequired) {
-        throw new Error(
-            `Insufficient funds on ${result.signerAddress}: ` +
-            `available ${balance} wei, required ${result.fundingRequired} wei.`,
-        );
-    }
+    await assertFunds(client, result.signerAddress, result.fundingRequired);
 
     log(`Broadcasting deploy tx (chainId=${result.chainId})...`);
     const txHash = await client.sendRawTransaction({
@@ -191,18 +191,8 @@ async function deploy(
     });
     log(`Tx hash: ${txHash}`);
 
-    const receipt = await client.waitForTransactionReceipt({hash: txHash});
-    if (!receipt || receipt.status !== 'success') {
-        throw new Error('Deployment failed (revert or missing receipt).');
-    }
-
-    const deployedCode = await client.getCode({address: result.proxyAddress});
-    if (!deployedCode || deployedCode === '0x') {
-        throw new Error(
-            `Transaction included, but no bytecode found at ${result.proxyAddress}. ` +
-            `Verify that the network supports standard CREATE2/opcodes and that the chainId is correct.`,
-        );
-    }
+    const receipt = await waitForSuccess(client, txHash, 'Deployment failed (revert or missing receipt).');
+    await assertCodeDeployed(client, result.proxyAddress);
 
     log(`Proxy successfully deployed to ${result.proxyAddress} (block ${receipt.blockNumber}).`);
     return {
@@ -258,11 +248,4 @@ async function main(argv: string[] = process.argv.slice(2)): Promise<void> {
     await deploy(chainId, rpcUrl);
 }
 
-// Run main() only if the file is launched directly (CommonJS)
-if (require.main === module) {
-    main()
-        .catch((err) => {
-            console.error(err instanceof Error ? err.message : err);
-            process.exit(1);
-        });
-}
+runIfMain(module, () => main());

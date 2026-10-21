@@ -19,7 +19,7 @@ spec:
       serviceAccountName: xainet-sa
       containers:
         - name: op-graph
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           readinessProbe:
             tcpSocket:
               port: 8000

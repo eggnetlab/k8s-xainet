@@ -19,7 +19,8 @@ spec:
       serviceAccountName: xainet-sa
       containers:
         - name: op-bundler
-          imagePullPolicy: Always
+          image: etherspot/skandha:v2-2.4.6
+          imagePullPolicy: IfNotPresent
           args:
             - standalone
           readinessProbe:

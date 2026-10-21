@@ -7,10 +7,6 @@ variables:
     value: "[@@@ L2-TOOLS]"
 
 commands:
-  - name: up
-    help: start local environment
-  - name: down
-    help: stop local environment
   - name: network
     alias: n
     args:
@@ -87,6 +83,21 @@ commands:
       - name: start
         help: start cluster
         flags:
+          - long: --profile
+            short: -p
+            help: Profile name to use
+            required: true
+            arg: profile
+          - long: --network
+            short: -n
+            help: Network name to use
+            required: true
+            arg: network
+          - long: --ip-address
+            short: -a
+            help: Ip address to use
+            required: true
+            arg: ip-address
           - long: --cpus
             short: -c
             help: Amount of cpus to allocate to minikube
@@ -100,21 +111,22 @@ commands:
             arg: memory
             default: 8g
         examples:
-          - l2-tools cluster start
-          - l2-tools cluster start -c 8 -m 16g
+          - l2-tools cluster start -p l2-kube -n l2-kube-net -a 192.168.1.100
+          - l2-tools cluster start -p l2-kube -n l2-kube-net -a 192.168.1.100 -c 8 -m 16g
       - name: stop
         help: stop cluster
         flags:
+          - long: --profile
+            short: -p
+            help: Profile name to use
+            required: true
+            arg: profile
           - long: --clean
             short: -c
             help: Delete cluster
         examples:
           - l2-tools cluster stop
           - l2-tools cluster stop -c
-      - name: reboot
-        help: reboot cluster
-        examples:
-          - l2-tools cluster reboot
   - name: data
     help: data utilities
     commands:

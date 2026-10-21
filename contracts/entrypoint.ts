@@ -6,15 +6,22 @@ import {
 import { parseArgs } from 'node:util';
 import {
     Abi,
-    createPublicClient,
-    createWalletClient,
-    defineChain,
     encodeDeployData,
     getCreate2Address,
-    http,
     SendTransactionParameters,
 } from 'viem';
-import { privateKeyToAccount } from 'viem/accounts';
+import { buildClients } from './utils/chain';
+import {
+    parseAddress,
+    parseChainId,
+    parseHex,
+    runIfMain,
+} from './utils/cli';
+import {
+    assertCodeDeployed,
+    hasCode,
+    waitForSuccess,
+} from './utils/tx';
 
 export async function main(argv: string[] = process.argv.slice(2)) {
     const {values} = parseArgs({
@@ -54,26 +61,17 @@ export async function main(argv: string[] = process.argv.slice(2)) {
         deployedBytecode: EntryPointDeployedBytecode as `0x${string}`,
     };
 
-    const privateChain = defineChain({
-        id: Number(values['chain-id']!),
-        name: values['chain-name']!,
-        nativeCurrency: {
-            name: 'Ether',
-            symbol: 'ETH',
-            decimals: 18,
+    const {
+        publicClient,
+        walletClient,
+    } = buildClients(
+        {
+            chainId: parseChainId(values['chain-id']!),
+            chainName: values['chain-name']!,
+            rpcUrl: values['rpc-url']!,
         },
-        rpcUrls: {
-            default: {http: [values['rpc-url']!]}, // RPC of your L2
-        },
-    });
-
-    const publicClient = createPublicClient({transport: http(values['rpc-url']!)});
-
-    const walletClient = createWalletClient({
-        account: privateKeyToAccount(values['private-key']! as `0x${string}`),
-        chain: privateChain,
-        transport: http(),
-    });
+        parseHex('private-key', values['private-key']!, 32),
+    );
 
     const contractDeployData = encodeDeployData({
         abi: artifact.abi,
@@ -81,8 +79,8 @@ export async function main(argv: string[] = process.argv.slice(2)) {
         args: [],
     });
 
-    const salt = values['salt']! as `0x${string}`,
-        factoryAddress: `0x${string}` = values['factory-address']! as `0x${string}`;
+    const salt = parseHex('salt', values['salt']!, 32);
+    const factoryAddress = parseAddress('factory-address', values['factory-address']!);
 
     const contractAddress = getCreate2Address({
         from: factoryAddress,
@@ -91,32 +89,21 @@ export async function main(argv: string[] = process.argv.slice(2)) {
     });
 
     // Check whether it is already present in the L2 state
-    const code = await publicClient.getCode({address: contractAddress});
-    if (code && code !== '0x') {
+    if (await hasCode(publicClient, contractAddress)) {
         console.log(`Entrypoint is already deployed at the address ${contractAddress}`);
         return;
     }
 
     const txHash = await walletClient.sendTransaction({
         to: factoryAddress,
-        data: `0x${salt?.slice(2)}${contractDeployData.slice(2)}` as `0x${string}`,
+        data: `0x${salt.slice(2)}${contractDeployData.slice(2)}` as `0x${string}`,
     } as SendTransactionParameters);
     console.debug(`[Tx] Transaction sent: ${txHash}`);
 
-    const receipt = await publicClient.waitForTransactionReceipt({hash: txHash});
-
-    if (receipt.status !== 'success') {
-        throw new Error(`Deployment failed: tx ${txHash} reverted`);
-    }
+    const receipt = await waitForSuccess(publicClient, txHash, `Deployment failed: tx ${txHash} reverted`);
+    await assertCodeDeployed(publicClient, contractAddress);
 
     console.log(`${artifact.name} successfully deployed to ${contractAddress} (block ${receipt.blockNumber}).`);
 }
 
-// Run main() only if the file is launched directly (CommonJS)
-if (require.main === module) {
-    main()
-        .catch((err) => {
-            console.error(err instanceof Error ? err.message : err);
-            process.exit(1);
-        });
-}
+runIfMain(module, () => main());

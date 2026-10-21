@@ -16,5 +16,6 @@ spec:
       containers:
         - name: sc-verifier
           image: ghcr.io/blockscout/smart-contract-verifier:v1.11.0
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8050

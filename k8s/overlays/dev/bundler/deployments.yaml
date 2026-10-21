@@ -8,7 +8,6 @@ spec:
     spec:
       containers:
         - name: op-bundler
-          image: etherspot/skandha:v2-2.4.6
           resources:
             limits:
               cpu: 0.5

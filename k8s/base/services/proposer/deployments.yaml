@@ -40,7 +40,7 @@ spec:
               mountPath: /workdir
       containers:
         - name: op-proposer
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           envFrom:
             - configMapRef:
                 name: blockchain-config-env

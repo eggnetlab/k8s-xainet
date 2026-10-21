@@ -1,6 +1,6 @@
 console "start l2"
 
-init_l2
+init_bc
 
 kubectl apply -k $k8s_dir/sequencer
 
