@@ -1,9 +1,10 @@
 #!/bin/bash
+
 set -e
 
 IFS=',' read -r -a schemas <<< $POSTGRES_SCHEMAS
 
-for schema in ${schemas[@]}
+for schema in "${schemas[@]}"
 do
     echo "adding schema $schema"
 PGPASSWORD=$POSTGRES_PASSWORD psql \
