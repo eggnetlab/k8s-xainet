@@ -3,5 +3,5 @@ kind: ConfigMap
 metadata:
   name: psql-config-env
 data:
-  dbHost: "psqldb.eco.local"
+  dbHost: "psqldb.xai.local"
   dbPort: "5432"

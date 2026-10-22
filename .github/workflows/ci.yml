@@ -44,7 +44,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Run shellcheck on tracked shell scripts
-        run: git ls-files '*.sh' ':!:*/bashly/*' | xargs shellcheck --severity=error
+        run: git ls-files '*.sh' 'scripts/xai-tools' ':!:*/bashly/*' | xargs shellcheck --severity=warning
 
   k8s:
     name: Kubernetes manifests

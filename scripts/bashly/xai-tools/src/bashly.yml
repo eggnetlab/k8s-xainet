@@ -1,53 +1,50 @@
-name: l2-tools
+name: xai-tools
 help: Local environment management
 version: 0.1.0
 
 variables:
   - name: mark
-    value: "[@@@ L2-TOOLS]"
+    value: "[@@@ XAI-TOOLS]"
+  - name: context
+    value: 'xai-kube'
+  - name: namespace
+    value: 'xainet'
+  - name: network_name
+    value: 'xai-devnet'
+  - name: network_subnet
+    value: '172.25.0'
 
 commands:
   - name: network
     alias: n
-    args:
-      - name: name
-        help: network name
-        required: true
-    flags:
-      - short: -s
-        long: --subnet
-        arg: subnet
-        help: network subnet
-        required: true
     examples:
-      - l2-tools network xai-devnet
-      - l2-tools network l2-devnet -s 172.26.0
+      - xai-tools network
   - name: l1
     help: l1 utilities
     commands:
       - name: start
         help: start l1
         examples:
-          - l2-tools l1 start
+          - xai-tools l1 start
       - name: stop
         help: stop l1
         examples:
-          - l2-tools l1 stop
+          - xai-tools l1 stop
   - name: l2
     help: l2 utilities
     commands:
       - name: start
         help: start l2
         examples:
-          - l2-tools l2 start
+          - xai-tools l2 start
       - name: stop
         help: stop l2
         examples:
-          - l2-tools l2 stop
+          - xai-tools l2 stop
       - name: init
         help: init l2
         examples:
-          - l2-tools l2 init
+          - xai-tools l2 init
       - name: bundler
         help: start the bundler
         flags:
@@ -60,44 +57,14 @@ commands:
             conflicts: [--start]
             help: stop the bundler
         examples:
-          - l2-tools l2 bundler --start
-          - l2-tools l2 bundler --stop
-  - name: bc
-    help: bc utilities
-    commands:
-      - name: start
-        help: start bc
-        examples:
-          - l2-tools bc start
-      - name: stop
-        help: stop bc
-        examples:
-          - l2-tools bc stop
-      - name: restore
-        help: restore bc
-        examples:
-          - l2-tools bc restore
+          - xai-tools l2 bundler --start
+          - xai-tools l2 bundler --stop
   - name: cluster
     help: cluster utilities
     commands:
       - name: start
         help: start cluster
         flags:
-          - long: --profile
-            short: -p
-            help: Profile name to use
-            required: true
-            arg: profile
-          - long: --network
-            short: -n
-            help: Network name to use
-            required: true
-            arg: network
-          - long: --ip-address
-            short: -a
-            help: Ip address to use
-            required: true
-            arg: ip-address
           - long: --cpus
             short: -c
             help: Amount of cpus to allocate to minikube
@@ -111,29 +78,24 @@ commands:
             arg: memory
             default: 8g
         examples:
-          - l2-tools cluster start -p l2-kube -n l2-kube-net -a 192.168.1.100
-          - l2-tools cluster start -p l2-kube -n l2-kube-net -a 192.168.1.100 -c 8 -m 16g
+          - xai-tools cluster start
+          - xai-tools cluster start -c 8 -m 16g
       - name: stop
         help: stop cluster
         flags:
-          - long: --profile
-            short: -p
-            help: Profile name to use
-            required: true
-            arg: profile
           - long: --clean
             short: -c
             help: Delete cluster
         examples:
-          - l2-tools cluster stop
-          - l2-tools cluster stop -c
+          - xai-tools cluster stop
+          - xai-tools cluster stop -c
   - name: data
     help: data utilities
     commands:
       - name: start
         help: start data
         examples:
-          - l2-tools data start
+          - xai-tools data start
       - name: stop
         help: stop data
         flags:
@@ -141,5 +103,5 @@ commands:
             short: -c
             help: Delete cluster
         examples:
-          - l2-tools data stop
-          - l2-tools data stop -c
+          - xai-tools data stop
+          - xai-tools data stop -c

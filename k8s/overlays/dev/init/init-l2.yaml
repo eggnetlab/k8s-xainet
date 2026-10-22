@@ -14,7 +14,7 @@ spec:
             claimName: l2-workdir
       containers:
         - name: task-pv-container
-          image: l2-conf:dev
+          image: xai-conf:dev
           imagePullPolicy: Always
           envFrom:
             - configMapRef:

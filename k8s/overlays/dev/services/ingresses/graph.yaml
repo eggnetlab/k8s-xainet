@@ -8,7 +8,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-    - host: graph.xailour.xaidev
+    - host: graph.xainet.xaidev
       http:
         paths:
           - pathType: ImplementationSpecific

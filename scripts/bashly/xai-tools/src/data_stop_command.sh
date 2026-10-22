@@ -3,7 +3,7 @@ console "exec stop data"
 init_data
 
 ARGS=""
-if [[ "${args['--clean']}" ]]; then
+if [[ "${args['--clean']:-}" ]]; then
   ARGS="-v"
 fi
 

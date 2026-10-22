@@ -32,4 +32,4 @@ op-deployer inspect l1 \
     ${L2_CHAIN_ID}
 
 ADDR=$(jq -r '.DisputeGameFactoryProxy // empty' /workdir/addresses.json)
-echo "GAME_FACTORY_ADDRESS=$(jq -r '.DisputeGameFactoryProxy // empty' /workdir/addresses.json)" > /workdir/.env
+echo "GAME_FACTORY_ADDRESS=$ADDR" > /workdir/.env

@@ -7,4 +7,4 @@ function bashly() {
 
 bashly generate
 
-mv -f ./l2-tools ../../
+mv -f ./xai-tools ../../

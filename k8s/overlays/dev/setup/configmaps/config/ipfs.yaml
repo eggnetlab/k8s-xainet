@@ -3,4 +3,4 @@ kind: ConfigMap
 metadata:
   name: ipfs-config-env
 data:
-  url: "ipfs.eco.local:5001"
+  url: "ipfs.xai.local:5001"

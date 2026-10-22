@@ -43,6 +43,6 @@ networks:
 
 volumes:
   ipfsdata:
-    name: l2-ipfs-data
+    name: xai-ipfs-data
   psqldbdata:
-    name: l2-psqldb-data
+    name: xai-psqldb-data

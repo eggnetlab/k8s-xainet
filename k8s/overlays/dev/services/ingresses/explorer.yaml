@@ -10,7 +10,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-    - host: explorer.xailour.xaidev
+    - host: explorer.xainet.xaidev
       http:
         paths:
           - path: /api

@@ -12,8 +12,8 @@ WORKDIR /network-data
 COPY ./genesis-l1.json /tmp/genesis-l1.json
 
 RUN op-deployer init \
-    --l1-chain-id $(jq -r '.config.chainId' /tmp/genesis-l1.json) \
-    --l2-chain-ids ${L2_CHAIN_ID} \
+    --l1-chain-id "$(jq -r '.config.chainId' /tmp/genesis-l1.json)" \
+    --l2-chain-ids "${L2_CHAIN_ID}" \
     --workdir /network-data \
     --intent-type custom
 

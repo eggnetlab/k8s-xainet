@@ -12,13 +12,14 @@ RECEIVER_ADDRESS=$5
 ADMIN_PRIVATE_KEY=$6
 CREATE2_FACTORY_ADDRESS=$7
 SMART_CONTRACT_SALT=$8
+CONTEXT=$9
 
 NS="xainet"
 TARGET="statefulsets/op-seq"
 PORT=8545
 LOG="$(mktemp)"
 
-kubectl -n "$NS" port-forward "$TARGET" "${PORT}:${PORT}" >"$LOG" 2>&1 &
+kubectl --context $CONTEXT -n "$NS" port-forward "$TARGET" "${PORT}:${PORT}" >"$LOG" 2>&1 &
 PF_PID=$!
 
 cleanup() {

@@ -2,13 +2,15 @@
 
 source_dir="$(cd -- "$(dirname -- "$0")" &>/dev/null && pwd)"
 L2_CHAIN_ID=$1
+CONTEXT=$2
 
 set -e
 
-docker build --build-arg L2_CHAIN_ID=$L2_CHAIN_ID -t localhost:5000/l2-conf:dev $source_dir/../bc-conf
+image_tag=localhost:5000/xai-conf:dev
+docker build --build-arg L2_CHAIN_ID=$L2_CHAIN_ID -t $image_tag $source_dir/../bc-conf
 
 LOG="$(mktemp)"
-kubectl -n kube-system port-forward deployments/registry 5000:5000 >"$LOG" 2>&1 &
+kubectl --context $CONTEXT -n kube-system port-forward deployments/registry 5000:5000 >"$LOG" 2>&1 &
 PF_PID=$!
 
 cleanup() {
@@ -24,4 +26,4 @@ until nc -z 127.0.0.1 5000; do
   sleep 1
 done
 
-docker push localhost:5000/l2-conf:dev
+docker push $image_tag
