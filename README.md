@@ -2,198 +2,90 @@
 
 A local OP Stack L2 devnet on Kubernetes (minikube), with block explorer, indexer and ERC-4337 bundler.
 
-Clone it, run one command, and get a working L2 with the usual tools around it. The goal is to save you the weeks of setup work it takes to wire these pieces together.
+Clone the repository, run `make up`, and get a working L2 with the usual tools around it. The goal is to save you the weeks of work it takes to wire these pieces together.
 
-Extracted from the development environment of [Xailour](https://xailour.net), a Community-as-a-Service platform.
+Xainet is the OP Stack L2 that [Xailour](https://xailour.net), a Community-as-a-Service platform, uses as the base of its blockchain services. This repository is extracted from Xailour's development
+environment and sets up a local, ephemeral network with the same stack.
 
 > **Scope:** ephemeral local development network. It is **not** a production setup.
-> The `base/` + `overlays/` layout is meant to be extended for other environments, but only `dev` is provided and tested.
-
-<!-- TODO: add CI badge (kustomize build + kubeconform) -->
+> Only the `dev` overlay is provided and tested. The `k8s/base` + `k8s/overlays` layout is meant to be extended for other environments (see [Extending](docs/extending.md)).
 
 ## What you get
 
-| Component                                               | Role                                                                               | Version                                  |
-|---------------------------------------------------------|------------------------------------------------------------------------------------|------------------------------------------|
-| `op-seq` (op-geth + op-node)                            | Sequencer                                                                          | op-geth `v1.101702.2`, op-node `v1.19.4` |
-| `op-rep` (op-geth + op-node)                            | Read replica, used by the explorer and the indexer                                 | same as above                            |
-| `op-batcher`                                            | Posts L2 data to L1 (calldata by default)                                          | `v1.16.2`                                |
-| `op-proposer`                                           | Posts output proposals to L1                                                       | `v1.16.3`                                |
-| Blockscout (backend, frontend, smart-contract verifier) | Block explorer                                                                     | `9.0.2` / `v2.3.5` / `v1.11.0`           |
-| graph-node                                              | The Graph indexer                                                                  | `v0.45.0`                                |
-| Skandha                                                 | ERC-4337 bundler (standalone mode)                                                 | `v2-2.4.6`                               |
-| Postgres, IPFS, Redis                                   | Dependencies of the above, run with Docker Compose                                 | see `compose/`                           |
-| Deterministic deployment proxy + EntryPoint             | Deployed on your L2 with scripts, see [below](#deterministic-proxy-and-entrypoint) | see `scripts/`                           |
+- An OP Stack L2: sequencer, read replica, batcher and proposer
+- A dev L1 started with [Kurtosis](https://docs.kurtosis.com/) (geth + lighthouse)
+- [Blockscout](https://www.blockscout.com/) block explorer
+- [The Graph](https://thegraph.com/) indexer (graph-node)
+- [Skandha](https://github.com/etherspot/skandha) ERC-4337 bundler, with the deterministic deployment proxy and the EntryPoint v0.7 deployed for your chain ID
+- Postgres, IPFS and Redis in Docker Compose
 
-All image tags are pinned.
-
-## Architecture
-
-```mermaid
-flowchart LR
-    subgraph L1["Dev L1 (docker network)"]
-        L1EL["Execution RPC"]
-        L1CL["Beacon API"]
-    end
-    subgraph K8S["Kubernetes - namespace xainet"]
-        SEQ["op-seq<br/>op-geth + op-node"]
-        REP["op-rep<br/>op-geth + op-node"]
-        BAT["op-batcher"]
-        PRO["op-proposer"]
-        BUN["op-bundler<br/>Skandha"]
-        BSB["Blockscout backend"]
-        BSF["Blockscout frontend"]
-        SCV["sc-verifier"]
-        GRA["graph-node"]
-    end
-    subgraph DOCKER["Docker network (compose)"]
-        PG[("Postgres")]
-        IPFS[("IPFS")]
-        RED[("Redis")]
-    end
-    SEQ --> L1EL
-    SEQ --> L1CL
-    SEQ -- p2p --> REP
-    BAT --> SEQ
-    BAT --> L1EL
-    PRO --> SEQ
-    PRO --> L1EL
-    BUN --> SEQ
-    BSB --> REP
-    BSB --> PG
-    BSB --> RED
-    BSB --> SCV
-    BSF --> BSB
-    GRA --> REP
-    GRA --> PG
-    GRA --> IPFS
-```
+All image tags are pinned. See [Architecture](docs/architecture.md) for versions and the network plan.
 
 ## Requirements
 
-- Linux (tested). macOS and Windows: see [Platform notes](#platform-notes).
-- Docker
-- minikube (docker driver) and kubectl
-- Node.js `[TODO: version]` for the deploy scripts
-- About `[TODO: CPUs]` CPUs and `[TODO: GB]` GB of RAM free for minikube
-- A dev L1 (execution RPC + beacon API) reachable from the cluster: `[TODO: how this repo starts it]`
+Linux, Docker (with Compose), minikube, kubectl, Kurtosis CLI, Node.js with pnpm, `nc` and `make`. The minikube cluster uses 4 CPUs and 8 GB of RAM by default.
 
-Tested with Kubernetes `[TODO: K8S_VERSION]` and minikube `[TODO: version]`.
+The project is developed and tested on Linux. macOS and Windows are not tested. Full details: [Getting started](docs/getting-started.md).
 
 ## Quick start
 
 ```bash
 git clone https://github.com/eggnetlab/k8s-xainet.git
 cd k8s-xainet
-./scripts/up.sh      # [TODO: final name]
+make up      # start everything
+make down    # stop everything (the data is reset at the next start)
 ```
 
-`up.sh` runs these steps. You can run them one by one if you prefer:
-
-1. Create the dev Docker network and start Postgres, IPFS and Redis (`compose/`).
-2. Start the dev L1. `[TODO]`
-3. Start minikube (addons: ingress, ingress-dns, registry, plus metrics-server).
-4. Build the `l2-conf` image and push it to the minikube registry. `l2-conf` generates the genesis, the rollup config and deploys the L1 contracts.
-5. Apply `k8s/overlays/dev/setup`, run the init jobs and wait for `init-l2` to finish.
-6. Apply the rest of `k8s/overlays/dev`.
-7. Deploy the deterministic proxy and the EntryPoint, then update the bundler config (see below).
-
-To remove everything, including volumes and the minikube cluster:
-
-```bash
-./scripts/down.sh    # [TODO: final name]
-```
+`make help` lists all targets. Each step of `make up` can also be run on its own.
 
 ## Endpoints
 
-| Service             | Address                                                |
-|---------------------|--------------------------------------------------------|
-| Explorer            | `http://explorer.xailour.xaidev`                       |
-| The Graph (queries) | `http://graph.xailour.xaidev`                          |
-| L2 RPC              | `[TODO: ingress host or kubectl port-forward command]` |
-| Bundler             | `[TODO]` (port `14337` in the cluster)                 |
+| Service   | Address                                                                                       |
+|-----------|-----------------------------------------------------------------------------------------------|
+| Explorer  | `http://explorer.xainet.xaidev`                                                               |
+| The Graph | `http://graph.xainet.xaidev`                                                                  |
+| L2 RPC    | not exposed by an ingress: use `kubectl -n xainet port-forward statefulsets/op-seq 8545:8545` |
+| Bundler   | service `op-bundler`, port `14337`, inside the cluster                                        |
 
-`*.xaidev` names are resolved by the minikube `ingress-dns` addon. If your host does not use it, add the hosts to `/etc/hosts` instead. `[TODO: resolver setup per OS]`
+The `*.xaidev` names must resolve to the minikube IP. See [Troubleshooting](docs/troubleshooting.md).
 
-## Default network values
+## Fixed values
 
-|                   |                                                          |
-|-------------------|----------------------------------------------------------|
-| L2 name           | `xainet`                                                 |
-| L2 chain ID       | `19970727` `[TODO: confirm it is configurable]`          |
-| L1 chain ID       | `900`                                                    |
-| Currency          | ETH, 18 decimals                                         |
-| Data availability | calldata (`blobs` is possible, see `batcher-config-env`) |
+|                      |                                      |
+|----------------------|--------------------------------------|
+| L2 name              | `Xainet`                             |
+| L2 chain ID          | `19970727`                           |
+| L1 chain ID          | `900`                                |
+| Currency             | ETH, 18 decimals                     |
+| Docker network       | `xai-devnet`, subnet `172.25.0.0/24` |
+| minikube profile     | `xai-kube`                           |
+| Kubernetes namespace | `xainet`                             |
 
-## Deterministic proxy and EntryPoint
+These values are constants of this project, not settings. The chain ID, the Docker network (name, subnet and the addresses of the components), the minikube profile and the namespace are written in
+more than one file, and changing one of them in a single place breaks the setup. See [Configuration](docs/configuration.md#fixed-values) for where each value is defined.
 
-The deterministic deployment proxy and the ERC-4337 EntryPoint have well-known addresses, but those addresses are only valid on known networks. On a custom chain ID the proxy transaction and the
-address of everything deployed through it (the EntryPoint included) are different.
+## Documentation
 
-For this reason the repo does not rely on canonical addresses:
+- [Architecture](docs/architecture.md): components, versions, network plan, startup flow
+- [Getting started](docs/getting-started.md): requirements and step by step usage
+- [Configuration](docs/configuration.md): the `.env` files and fixed values
+- [Contracts](docs/contracts.md): deterministic proxy and EntryPoint
+- [Extending](docs/extending.md): what to provide to build a `test` or `prod` overlay
+- [Troubleshooting](docs/troubleshooting.md): known problems
 
-- `scripts/[TODO]` builds the proxy deployment transaction from the chain ID of your network.
-- `scripts/[TODO]` deploys the EntryPoint through the proxy.
-- Both scripts print the resulting addresses and write them to `[TODO: addresses.json]`.
-
-Use these addresses in your bundler and SDK configuration. The bundler config for `dev` lives in `k8s/overlays/dev/bundler/configmap.yaml` and must contain the EntryPoint address printed by the
-script. Restart the bundler after changing it.
-
-With the same chain ID and the same bytecode, the addresses are always the same. The EntryPoint bytecode comes from `[TODO: official release + version]`. `[TODO: license note, see Licenses]`
-
-## Repository layout
-
-```
-k8s/
-  base/               # neutral manifests: no secrets, no environment values
-  overlays/
-    dev/              # everything specific to the local devnet (incl. init jobs)
-compose/              # Postgres, IPFS, Redis (Docker Compose, static IPs)
-l2-conf/              # Dockerfile and script that generate the L2 configuration
-deploy/               # TypeScript scripts: deterministic proxy and EntryPoint
-scripts/              # up/down and minikube start (config in scripts/minikube/conf)
-```
-
-## Extending to other environments
-
-`base/` expects the overlay to provide the objects below. To create a `test` or `prod` overlay, provide your own version of each one.
-
-| Object                                     | Kind      | Content                                                  |
-|--------------------------------------------|-----------|----------------------------------------------------------|
-| `blockchain-config-env`                    | ConfigMap | L1/L2 chain IDs and RPC URLs, internal service URLs      |
-| `psql-config-env`                          | ConfigMap | Postgres host and port                                   |
-| `ipfs-config-env`                          | ConfigMap | IPFS URL                                                 |
-| `batcher-config-env`                       | ConfigMap | Data availability type                                   |
-| `blockscout-config-env`                    | ConfigMap | Public host, protocol, Redis URL, pool sizes             |
-| `op-bundler-config-env`                    | ConfigMap | Skandha `config.json` (EntryPoint address, relayer, RPC) |
-| `l2-private-key`                           | Secret    | Admin, batcher and proposer keys                         |
-| `p2p-private-key`, `p2p-private-key-env`   | Secret    | P2P identity and sequencer key                           |
-| `psql-auth`                                | Secret    | Database password                                        |
-| `blockscout`                               | Secret    | `SECRET_KEY_BASE`                                        |
-| `l2-workdir`, `l2-seq-data`, `l2-rep-data` | PVC       | Shared L2 config, sequencer data, replica data           |
-
-Things a patch cannot fix when you move away from `dev`: key management, genesis and rollup config (they must be stable artifacts, not regenerated at each start), a single sequencer, and storage
-sizing.
+Each of `bc-conf`, `contracts/` and `scripts/` has its own README.
 
 ## Security
 
-All keys, passwords and secrets in `k8s/overlays/dev` are **development values, published on purpose**. Never reuse them on a real network and never send real funds to these addresses.
+All keys, passwords and secrets in this repository are **development values, published on purpose**. Never reuse them on a real network and never send real funds to these addresses.
+`ADMIN_PRIVATE_KEY` is the well-known first account key of Hardhat and Anvil.
 
-The `dev` setup also exposes admin APIs (`admin`, `miner`, op-node admin RPC) inside the cluster and allows any CORS origin. Do not expose it to the internet.
+The `dev` setup exposes admin APIs inside the cluster. Do not expose it to the internet.
 
-## Platform notes
+## License
 
-- **Tested:** Linux, minikube with the docker driver. `[TODO: confirm]`
-- **macOS / Windows:** the node runs inside Docker Desktop, so ingress and the registry need extra steps (`minikube tunnel`, port-forward of the registry). On macOS, port 5000 may be used by AirPlay
-  Receiver: use another local port for the registry push. `[TODO: document]`
-- **Single node only:** the L2 work directory is a `ReadWriteOnce` volume shared by several pods.
-- **Not covered:** high availability, monitoring, backups, key rotation.
-
-## Licenses
-
-`MIT` for the code in this repository.
-
-The EntryPoint contract has its own license. Check the license of the release you use and keep its license file next to it. `[TODO]`
+[MIT](LICENSE). The EntryPoint bytecode comes from the npm package `@account-abstraction/contracts`, which is downloaded at install time and is not part of this repository.
+See [Contracts](docs/contracts.md#license-of-the-entrypoint).
 
 ## Maintainer
 

@@ -61,7 +61,7 @@ xai_tools_network_usage() {
     echo
 
     printf "%s\n" "Examples:"
-    printf "  l2-tools network\n"
+    printf "  xai-tools network\n"
     echo
 
   fi
@@ -108,7 +108,7 @@ xai_tools_l1_start_usage() {
     echo
 
     printf "%s\n" "Examples:"
-    printf "  l2-tools l1 start\n"
+    printf "  xai-tools l1 start\n"
     echo
 
   fi
@@ -131,7 +131,7 @@ xai_tools_l1_stop_usage() {
     echo
 
     printf "%s\n" "Examples:"
-    printf "  l2-tools l1 stop\n"
+    printf "  xai-tools l1 stop\n"
     echo
 
   fi
@@ -180,7 +180,7 @@ xai_tools_l2_start_usage() {
     echo
 
     printf "%s\n" "Examples:"
-    printf "  l2-tools l2 start\n"
+    printf "  xai-tools l2 start\n"
     echo
 
   fi
@@ -203,7 +203,7 @@ xai_tools_l2_stop_usage() {
     echo
 
     printf "%s\n" "Examples:"
-    printf "  l2-tools l2 stop\n"
+    printf "  xai-tools l2 stop\n"
     echo
 
   fi
@@ -226,7 +226,7 @@ xai_tools_l2_init_usage() {
     echo
 
     printf "%s\n" "Examples:"
-    printf "  l2-tools l2 init\n"
+    printf "  xai-tools l2 init\n"
     echo
 
   fi
@@ -259,8 +259,8 @@ xai_tools_l2_bundler_usage() {
     echo
 
     printf "%s\n" "Examples:"
-    printf "  l2-tools l2 bundler --start\n"
-    printf "  l2-tools l2 bundler --stop\n"
+    printf "  xai-tools l2 bundler --start\n"
+    printf "  xai-tools l2 bundler --stop\n"
     echo
 
   fi
@@ -317,8 +317,8 @@ xai_tools_cluster_start_usage() {
     echo
 
     printf "%s\n" "Examples:"
-    printf "  l2-tools cluster start\n"
-    printf "  l2-tools cluster start -c 8 -m 16g\n"
+    printf "  xai-tools cluster start\n"
+    printf "  xai-tools cluster start -c 8 -m 16g\n"
     echo
 
   fi
@@ -345,8 +345,8 @@ xai_tools_cluster_stop_usage() {
     echo
 
     printf "%s\n" "Examples:"
-    printf "  l2-tools cluster stop\n"
-    printf "  l2-tools cluster stop -c\n"
+    printf "  xai-tools cluster stop\n"
+    printf "  xai-tools cluster stop -c\n"
     echo
 
   fi
@@ -393,7 +393,7 @@ xai_tools_data_start_usage() {
     echo
 
     printf "%s\n" "Examples:"
-    printf "  l2-tools data start\n"
+    printf "  xai-tools data start\n"
     echo
 
   fi
@@ -420,8 +420,8 @@ xai_tools_data_stop_usage() {
     echo
 
     printf "%s\n" "Examples:"
-    printf "  l2-tools data stop\n"
-    printf "  l2-tools data stop -c\n"
+    printf "  xai-tools data stop\n"
+    printf "  xai-tools data stop -c\n"
     echo
 
   fi
@@ -1884,7 +1884,7 @@ initialize() {
   declare -g version="0.1.0"
   set -euo pipefail
 
-  declare -g mark="[@@@ L2-TOOLS]"
+  declare -g mark="[@@@ XAI-TOOLS]"
 
   declare -g context="xai-kube"
 

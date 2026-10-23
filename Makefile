@@ -17,11 +17,12 @@ NS             ?= xainet
 CONTEXT        ?= xai-kube
 
 K8S  := $(WORKDIR)k8s/overlays/$(OVERLAY)
+KCTL := kubectl --context $(CONTEXT)
 
 BC_PRE_INIT       ?=
 BC_POST_INIT      ?=
 BC_PRE_DOWN       ?=
-BC_POST_DOWN      ?=
+BC_POST_DOWN      ?= @$(WORKDIR)scripts/xai-tools data stop
 BC_PRE_SETUP      ?= @$(WORKDIR)scripts/xai-tools data stop -c && $(WORKDIR)scripts/xai-tools data start
 BC_POST_SETUP     ?=
 
@@ -30,7 +31,7 @@ CLUSTER_POST_UP   ?=
 CLUSTER_PRE_DOWN  ?=
 CLUSTER_POST_DOWN ?=
 
-.PHONY: help env up down bc-up bc-down bc-restore network cluster-up cluster-down images bc-init bc-start check
+.PHONY: help env up down bc-up bc-down bc-restore network cluster-up cluster-down images bc-init bc-start check contracts status
 
 help: ## Show this help
 	@awk 'BEGIN {FS = ":.*## "} /^[a-zA-Z_-]+:.*## / {printf "  %-12s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -81,5 +82,11 @@ bc-up: bc-init bc-start ## start the blockchain
 
 bc-restore: bc-down bc-up ## Restore the blockchain
 
+contracts: ## Deploy deterministic proxy and EntryPoint
+	@$(WORKDIR)scripts/deploy-contracts.sh $(L2_CHAIN_ID) $(L2_CHAIN_NAME) $(SEQUENCER_URL) $(SENDER_PRIVATE_KEY) $(RECEIVER_ADDRESS) $(ADMIN_PRIVATE_KEY) $(CREATE2_FACTORY_ADDRESS) $(SMART_CONTRACT_SALT) $(CONTEXT)
+
 check: ## Render the manifests and validate them (used by CI)
 	@kubectl kustomize $(K8S) | docker run -i --rm ghcr.io/yannh/kubeconform:v0.8.0 -strict -ignore-missing-schemas -summary
+
+status: ## Show pods, volumes and ingresses
+	@$(KCTL) -n $(NS) get pods,pvc,ingress
