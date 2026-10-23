@@ -1,0 +1,107 @@
+name: xai-tools
+help: Local environment management
+version: 0.1.0
+
+variables:
+  - name: mark
+    value: "[@@@ XAI-TOOLS]"
+  - name: context
+    value: 'xai-kube'
+  - name: namespace
+    value: 'xainet'
+  - name: network_name
+    value: 'xai-devnet'
+  - name: network_subnet
+    value: '172.25.0'
+
+commands:
+  - name: network
+    alias: n
+    examples:
+      - xai-tools network
+  - name: l1
+    help: l1 utilities
+    commands:
+      - name: start
+        help: start l1
+        examples:
+          - xai-tools l1 start
+      - name: stop
+        help: stop l1
+        examples:
+          - xai-tools l1 stop
+  - name: l2
+    help: l2 utilities
+    commands:
+      - name: start
+        help: start l2
+        examples:
+          - xai-tools l2 start
+      - name: stop
+        help: stop l2
+        examples:
+          - xai-tools l2 stop
+      - name: init
+        help: init l2
+        examples:
+          - xai-tools l2 init
+      - name: bundler
+        help: start the bundler
+        flags:
+          - long: --start
+            short: -r
+            conflicts: [--stop]
+            help: run the bundler
+          - long: --stop
+            short: -s
+            conflicts: [--start]
+            help: stop the bundler
+        examples:
+          - xai-tools l2 bundler --start
+          - xai-tools l2 bundler --stop
+  - name: cluster
+    help: cluster utilities
+    commands:
+      - name: start
+        help: start cluster
+        flags:
+          - long: --cpus
+            short: -c
+            help: Amount of cpus to allocate to minikube
+            required: false
+            arg: cpus
+            default: "4"
+          - long: --memory
+            short: -m
+            help: Amount of memory to allocate to minikube
+            required: false
+            arg: memory
+            default: 8g
+        examples:
+          - xai-tools cluster start
+          - xai-tools cluster start -c 8 -m 16g
+      - name: stop
+        help: stop cluster
+        flags:
+          - long: --clean
+            short: -c
+            help: Delete cluster
+        examples:
+          - xai-tools cluster stop
+          - xai-tools cluster stop -c
+  - name: data
+    help: data utilities
+    commands:
+      - name: start
+        help: start data
+        examples:
+          - xai-tools data start
+      - name: stop
+        help: stop data
+        flags:
+          - long: --clean
+            short: -c
+            help: Delete cluster
+        examples:
+          - xai-tools data stop
+          - xai-tools data stop -c

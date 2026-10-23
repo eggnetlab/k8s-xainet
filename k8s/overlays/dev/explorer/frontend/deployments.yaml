@@ -1,0 +1,17 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: blockscout-frontend
+  namespace: xainet
+spec:
+  template:
+    spec:
+      containers:
+        - name: frontend
+          resources:
+            requests:
+              cpu: "0.25"
+              memory: 250Mi
+            limits:
+              cpu: "0.5"
+              memory: 500Mi

@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: blockchain-config
+data:
+  l2Name: "xainet"
+  l2Currency: "Ether"
+  l2CurrencySymbol: "ETH"
+  l2CurrencyDecimals: "18"

@@ -1,0 +1,6 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: batcher-config-env
+data:
+  dataAvailabilityType: "calldata" # impostare a blobs in caso si voglia ritornare a testare i blob

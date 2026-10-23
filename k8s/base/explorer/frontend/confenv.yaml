@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: blockscout-frontend
+  namespace: xainet
+spec:
+  template:
+    spec:
+      containers:
+        - name: frontend
+          env:
+            - name: NEXT_PUBLIC_APP_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: blockscout-config-env
+                  key: BLOCKSCOUT_HOST
+            - name: NEXT_PUBLIC_APP_PROTOCOL
+              valueFrom:
+                configMapKeyRef:
+                  name: blockscout-config-env
+                  key: BLOCKSCOUT_PROTOCOL
+            - name: NEXT_PUBLIC_API_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: blockscout-config-env
+                  key: BLOCKSCOUT_HOST
+            - name: NEXT_PUBLIC_API_PROTOCOL
+              valueFrom:
+                configMapKeyRef:
+                  name: blockscout-config-env
+                  key: BLOCKSCOUT_PROTOCOL
+            - name: NEXT_PUBLIC_API_WEBSOCKET_PROTOCOL
+              valueFrom:
+                configMapKeyRef:
+                  name: blockscout-config-env
+                  key: WEBSOCKET_PROTOCOL
+            - name: NEXT_PUBLIC_NETWORK_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: blockchain-config
+                  key: l2Name
+            - name: NEXT_PUBLIC_NETWORK_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: blockchain-config-env
+                  key: l2ChainId
+            - name: NEXT_PUBLIC_NETWORK_CURRENCY_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: blockchain-config
+                  key: l2Currency
+            - name: NEXT_PUBLIC_NETWORK_CURRENCY_SYMBOL
+              valueFrom:
+                configMapKeyRef:
+                  name: blockchain-config
+                  key: l2CurrencySymbol
+            - name: NEXT_PUBLIC_NETWORK_CURRENCY_DECIMALS
+              valueFrom:
+                configMapKeyRef:
+                  name: blockchain-config
+                  key: l2CurrencyDecimals
+            - name: NEXT_PUBLIC_IS_TESTNET
+              valueFrom:
+                configMapKeyRef:
+                  name: blockchain-config-env
+                  key: testnet
+            - name: NEXT_PUBLIC_AD_BANNER_PROVIDER
+              value: "none"

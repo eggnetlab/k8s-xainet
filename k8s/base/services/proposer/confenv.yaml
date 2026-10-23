@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: op-proposer
+  namespace: xainet
+spec:
+  template:
+    spec:
+      containers:
+        - name: op-proposer
+          env:
+            - name: OP_PROPOSER_L1_ETH_RPC
+              valueFrom:
+                configMapKeyRef:
+                  name: blockchain-config-env
+                  key: l1RpcUrl
+            - name: OP_PROPOSER_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: l2-private-key
+                  key: proposerPK
+            - name: GAME_FACTORY_ADDRESS
+              valueFrom:
+                fileKeyRef:
+                  path: config.env
+                  volumeName: config-storage
+                  key: GAME_FACTORY_ADDRESS
+                  optional: false

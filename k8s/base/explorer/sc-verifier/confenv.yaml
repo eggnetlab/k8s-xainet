@@ -1,0 +1,15 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sc-verifier
+  namespace: xainet
+spec:
+  template:
+    spec:
+      containers:
+        - name: sc-verifier
+          env:
+            - name: SMART_CONTRACT_VERIFIER__SERVER__HTTP__ADDR
+              value: "0.0.0.0:8050"
+            - name: SMART_CONTRACT_VERIFIER__COMPILERS__EXECUTION__TYPE
+              value: "native"

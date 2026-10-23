@@ -1,0 +1,15 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: op-rep
+  namespace: xainet
+spec:
+  template:
+    spec:
+      volumes:
+        - name: workdir-storage
+          persistentVolumeClaim:
+            claimName: l2-workdir
+        - name: data-storage
+          persistentVolumeClaim:
+            claimName: l2-rep-data

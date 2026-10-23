@@ -1,0 +1,48 @@
+services:
+  ipfs:
+    image: ipfs/kubo:v0.43.1
+    container_name: $IPFS_CONTAINER_NAME
+    volumes:
+      - ipfsdata:/data/ipfs
+    networks:
+      xai-devnet:
+        ipv4_address: $IPFS_ADDRESS
+        aliases:
+          - $IPFS_ALIAS
+
+  psqldb:
+    image: postgres:18-alpine
+    hostname: $PSQL_ALIAS
+    container_name: $PSQL_CONTAINER_NAME
+    environment:
+      POSTGRES_USER: $PSQLDB_ROOT_USERNAME
+      POSTGRES_PASSWORD: $PSQLDB_ROOT_PASSWORD
+      POSTGRES_DB: $PSQLDB_NAME
+      POSTGRES_USER_PASSWORD: $PSQLDB_USER_PASSWORD
+      POSTGRES_SCHEMAS: $PSQLDB_SCHEMAS
+    networks:
+      xai-devnet:
+        ipv4_address: $PSQL_ADDRESS
+        aliases: [ $PSQL_ALIAS ]
+    volumes:
+      - psqldbdata:/var/lib/postgresql
+      - ./psql-scripts:/docker-entrypoint-initdb.d
+
+  redis:
+    image: redis:8-alpine
+    hostname: $REDIS_ALIAS
+    container_name: $REDIS_CONTAINER_NAME
+    networks:
+      xai-devnet:
+        ipv4_address: $REDIS_ADDRESS
+        aliases: [ $REDIS_ALIAS ]
+
+networks:
+  xai-devnet:
+    external: true
+
+volumes:
+  ipfsdata:
+    name: xai-ipfs-data
+  psqldbdata:
+    name: xai-psqldb-data

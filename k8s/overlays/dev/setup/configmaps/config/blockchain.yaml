@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: blockchain-config-env
+data:
+  l1ChainId: "900"
+  l1RpcUrl: "http://172.25.0.129:8545"
+  l1BeaconUrl: "http://172.25.0.130:4000"
+  l2ChainId: "19970727"
+  l2Name: "xainet"
+  l2RpcUrl: "http://op-seq:8545"
+  l2RollupUrl: "http://op-seq:8547"
+  l2RepUrl: "http://op-rep:8545"
+  l2RepWs: "ws://op-rep:8546"
+  l2Currency: "Ether"
+  l2CurrencySymbol: "ETH"
+  l2CurrencyDecimals: "18"
+  xainet: "xainet:http://op-rep:8545"
+  testnet: "true"

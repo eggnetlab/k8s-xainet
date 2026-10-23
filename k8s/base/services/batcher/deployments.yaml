@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: op-batcher
+  name: op-batcher
+  namespace: xainet
+spec:
+  revisionHistoryLimit: 2
+  replicas: 1
+  selector:
+    matchLabels:
+      app: op-batcher
+  template:
+    metadata:
+      labels:
+        app: op-batcher
+    spec:
+      serviceAccountName: xainet-sa
+      containers:
+        - name: op-batcher
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef:
+                name: blockchain-config-env
+          command:
+            - op-batcher
+          args:
+            - --rpc.addr=0.0.0.0
+            - --rpc.port=8548
+            - --l2-eth-rpc=$(l2RpcUrl)
+            - --rollup-rpc=$(l2RollupUrl)
+            - --resubmission-timeout=30s
+            - --max-channel-duration=10
+            - --log.level=info
+            - --log.format=json
+          readinessProbe:
+            tcpSocket:
+              port: 8548
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 6

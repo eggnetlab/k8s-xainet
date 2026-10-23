@@ -1,0 +1,18 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: op-seq
+  namespace: xainet
+spec:
+  template:
+    spec:
+      volumes:
+        - name: p2p-private-key
+          secret:
+            secretName: p2p-private-key
+        - name: workdir-storage
+          persistentVolumeClaim:
+            claimName: l2-workdir
+        - name: data-storage
+          persistentVolumeClaim:
+            claimName: l2-seq-data

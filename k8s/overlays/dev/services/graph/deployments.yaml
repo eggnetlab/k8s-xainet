@@ -1,0 +1,18 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: op-graph
+  namespace: xainet
+spec:
+  template:
+    spec:
+      containers:
+        - name: op-graph
+          image: graphprotocol/graph-node:v0.45.0
+          resources:
+            limits:
+              cpu: 0.25
+              memory: 250Mi
+            requests:
+              cpu: 0.1
+              memory: 50Mi

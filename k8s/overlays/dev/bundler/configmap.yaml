@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: op-bundler-config-env
+data:
+  config.json: |
+    {
+      "entryPoints": [
+        "0x7242d76fe68dd6c2deb12001fca222316a8e7d67"
+      ],
+      "relayers": [
+        "0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a"
+      ],
+      "rpcEndpoint": "http://op-seq:8545"
+    }

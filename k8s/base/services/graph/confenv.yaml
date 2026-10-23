@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: op-graph
+  namespace: xainet
+spec:
+  template:
+    spec:
+      containers:
+        - name: op-graph
+          env:
+            - name: GRAPH_LOG
+              value: debug
+            - name: RUST_BACKTRACE
+              value: full
+            - name: postgres_host
+              valueFrom:
+                configMapKeyRef:
+                  name: psql-config-env
+                  key: dbHost
+            - name: postgres_port
+              valueFrom:
+                configMapKeyRef:
+                  name: psql-config-env
+                  key: dbPort
+            - name: postgres_db
+              valueFrom:
+                configMapKeyRef:
+                  name: psql-config
+                  key: dbNameGraph
+            - name: postgres_user
+              value: "graph"
+            - name: postgres_pass
+              valueFrom:
+                secretKeyRef:
+                  name: psql-auth
+                  key: password
+            - name: ipfs
+              valueFrom:
+                configMapKeyRef:
+                  name: ipfs-config-env
+                  key: url
+            - name: ethereum
+              valueFrom:
+                configMapKeyRef:
+                  name: blockchain-config-env
+                  key: xainet

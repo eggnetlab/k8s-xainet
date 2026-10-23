@@ -1,0 +1,17 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: xainet
+
+resources:
+  - configmaps/config/configmap.yaml
+  - backend/services.yaml
+  - backend/deployments.yaml
+  - frontend/services.yaml
+  - frontend/deployments.yaml
+  - sc-verifier/services.yaml
+  - sc-verifier/deployments.yaml
+
+patches:
+  - path: backend/confenv.yaml
+  - path: frontend/confenv.yaml
+  - path: sc-verifier/confenv.yaml

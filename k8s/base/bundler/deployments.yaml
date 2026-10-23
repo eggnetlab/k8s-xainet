@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: op-bundler
+  name: op-bundler
+  namespace: xainet
+spec:
+  revisionHistoryLimit: 2
+  replicas: 1
+  selector:
+    matchLabels:
+      app: op-bundler
+  template:
+    metadata:
+      labels:
+        app: op-bundler
+    spec:
+      serviceAccountName: xainet-sa
+      containers:
+        - name: op-bundler
+          image: etherspot/skandha:v2-2.4.6
+          imagePullPolicy: IfNotPresent
+          args:
+            - standalone
+          readinessProbe:
+            tcpSocket:
+              port: 14337
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 6

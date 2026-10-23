@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: blockscout-backend
+  namespace: xainet
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: blockscout-backend
+  template:
+    metadata:
+      labels:
+        app: blockscout-backend
+    spec:
+      containers:
+        - name: backend
+          image: ghcr.io/blockscout/blockscout-optimism:9.0.2
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh", "-c"]
+          args:
+            - >-
+              bin/blockscout eval "Elixir.Explorer.ReleaseTasks.migrate([])" &&
+              bin/blockscout start
+          ports:
+            - containerPort: 4000
+              name: http
+          startupProbe:
+            tcpSocket:
+              port: 4000
+            periodSeconds: 10
+            failureThreshold: 60      # up to 10 min for migrations
+          readinessProbe:
+            tcpSocket:
+              port: 4000
+            periodSeconds: 10

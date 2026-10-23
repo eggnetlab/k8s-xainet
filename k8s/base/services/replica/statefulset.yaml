@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: op-rep
+  namespace: xainet
+spec:
+  serviceName: op-rep
+  replicas: 1
+  selector:
+    matchLabels:
+      app: op-rep
+  template:
+    metadata:
+      labels:
+        app: op-rep
+    spec:
+      terminationGracePeriodSeconds: 120
+      securityContext:
+        fsGroup: 1000   # allinea all'utente dell'immagine
+      containers:
+        - name: op-geth
+          image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-geth:v1.101702.2
+          imagePullPolicy: IfNotPresent
+          args:
+            - --datadir=/workspace/op-geth-data
+            - --http
+            - --http.addr=0.0.0.0
+            - --http.port=8545
+            - --ws
+            - --ws.addr=0.0.0.0
+            - --ws.port=8546
+            - --authrpc.addr=0.0.0.0
+            - --authrpc.port=8551
+            - --authrpc.jwtsecret=/workspace/config/jwt.txt
+            - --syncmode=full
+            - --gcmode=archive
+            - --http.vhosts=*
+            - --http.corsdomain=*
+            - --http.api=eth,net,web3,debug,txpool
+            - --ws.origins=*
+            - --authrpc.vhosts=*
+          readinessProbe:
+            tcpSocket:
+              port: 8545
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 6
+        - name: op-node
+          image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-node:v1.19.4
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef:
+                name: blockchain-config-env
+            - configMapRef:
+                name: p2p-config-env
+          command:
+            - op-node
+          args:
+            - --l1=$(l1RpcUrl)
+            - --l1.beacon=$(l1BeaconUrl)
+            - --l2=http://127.0.0.1:8551
+            - --l2.jwt-secret=/workspace/config/jwt.txt
+            - --rollup.config=/workspace/config/rollup.json
+            - --rollup.l1-chain-config=/workspace/config/genesis-l1.json
+            - --sequencer.enabled=false
+            - --p2p.static=/dns4/op-seq-0.op-seq/tcp/9222/p2p/$(sequencerId)
+            - --rpc.addr=0.0.0.0
+            - --rpc.port=8547
+            - --log.level=info
+            - --log.format=json
+          readinessProbe:
+            tcpSocket:
+              port: 8547
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 6
