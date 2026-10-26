@@ -2,4 +2,6 @@ console "stop l1"
 
 init_bc
 
-kurtosis enclave rm -f $L1_NAME
+if [[ -n "$(kurtosis enclave ls --cli-log-level warning | grep $L1_NAME)" ]]; then
+    kurtosis enclave rm -f $L1_NAME
+fi

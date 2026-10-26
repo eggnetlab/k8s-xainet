@@ -1,6 +1,6 @@
 init_cluster
 
-if [ ! "$(docker ps -q -f name=$context)" ]; then
+if ! is_cluster_running; then
     memory=${args['--memory']}
     cpus=${args['--cpus']}
 
@@ -28,8 +28,8 @@ if [ ! "$(docker ps -q -f name=$context)" ]; then
 
     kubectl --context $context -n kube-system wait --for=condition=Ready node --all --timeout=120s
 
-    kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/download/v0.9.0/components.yaml
-    kubectl -n kube-system patch deployment metrics-server --type=json \
+    kubectl --context $context apply -f https://github.com/kubernetes-sigs/metrics-server/releases/download/v0.9.0/components.yaml
+    kubectl --context $context -n kube-system patch deployment metrics-server --type=json \
       -p='[{"op":"add","path":"/spec/template/spec/containers/0/args/-","value":"--kubelet-insecure-tls"}]'
 fi
 

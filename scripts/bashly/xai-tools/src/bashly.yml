@@ -101,7 +101,7 @@ commands:
         flags:
           - long: --clean
             short: -c
-            help: Delete cluster
+            help: Delete data
         examples:
           - xai-tools data stop
           - xai-tools data stop -c

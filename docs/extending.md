@@ -52,7 +52,7 @@ The base itself defines `blockchain-config` (L2 name and currency) and `psql-con
 
 ### Images
 
-The overlay also provides the image of the init jobs. In `dev` it is `l2-conf:dev`, resolved through the registry configuration that `make cluster` installs in minikube. On another cluster, use a name
+The overlay also provides the image of the init jobs. In `dev` it is `xai-conf:dev`, resolved through the registry configuration that `make cluster-up` installs in minikube. On another cluster, use a name
 that your cluster can resolve.
 
 ## What a patch cannot fix

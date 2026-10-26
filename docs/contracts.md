@@ -44,7 +44,7 @@ It needs the sequencer running, plus `pnpm` and `nc`. The values come from the r
 - The EntryPoint address is printed by `entrypoint`. The bundler reads it from `k8s/overlays/dev/bundler/configmap.yaml`: it must be the same address.
 
 If you change the chain ID, the salt or the version of the EntryPoint package, run the scripts again and update all of the above. Restart the bundler after changing its ConfigMap:
-`kubectl -n xainet rollout restart deployment/op-bundler`.
+`kubectl --context xai-kube -n xainet rollout restart deployment/op-bundler`.
 
 ## License of the EntryPoint
 
