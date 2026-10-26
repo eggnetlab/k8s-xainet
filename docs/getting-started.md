@@ -35,6 +35,14 @@ make up
 
 The explorer is then available at `http://explorer.xainet.xaidev`. If the name does not resolve, see [Troubleshooting](troubleshooting.md#the-xaidev-names-do-not-resolve).
 
+### Install dependencies
+
+To install dependencies see [Prerequisites](prerequisites.md).
+
+```bash
+make deps
+```
+
 ## Run the steps one by one
 
 `make up` runs `env`, `network`, `cluster-up`, `images` and `bc-up`, in this order. `bc-up` runs `bc-init` and then `bc-start`. Each of them can be run alone. Run `make help` for the list.
@@ -56,6 +64,7 @@ The explorer is then available at `http://explorer.xainet.xaidev`. If the name d
 | `make contracts`    | Deploys the deterministic proxy and the EntryPoint. It needs the sequencer running. It is also part of `bc-start`.                     |
 | `make status`       | Shows pods, volumes and ingresses.                                                                                                     |
 | `make check`        | Renders and validates the Kubernetes manifests.                                                                                        |
+| `make deps`         | Install minikube, kurtosis and kubectl                                                                                                 |
 
 The Makefile has hooks that run before and after some steps: see [Hooks](architecture.md#hooks).
 
@@ -64,7 +73,7 @@ The Makefile has hooks that run before and after some steps: see [Hooks](archite
 The L2 RPC is not exposed by an ingress. Forward the sequencer port:
 
 ```bash
-kubectl -n xainet port-forward statefulsets/op-seq 8545:8545
+kubectl --context xai-kube -n xainet port-forward statefulsets/op-seq 8545:8545
 ```
 
 The RPC is then `http://localhost:8545`, with chain ID `19970727`. The development accounts and keys are in the `.env` files and are public.

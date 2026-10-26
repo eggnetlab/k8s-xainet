@@ -32,7 +32,7 @@ addresses are written in several files. See [Configuration](configuration.md#fix
 Read the logs of the job:
 
 ```bash
-kubectl -n xainet logs job/init-l2
+kubectl --context xai-kube -n xainet logs job/init-l2
 ```
 
 The job is removed five minutes after it finishes, together with its logs. Typical causes:
@@ -43,9 +43,9 @@ The job is removed five minutes after it finishes, together with its logs. Typic
 
 ## The `xai-conf` image is not found
 
-`init-l2` uses the short name `xai-conf:dev`. It resolves because `make cluster` installs a CRI-O configuration in minikube that searches `localhost:5000` first. For it to work:
+`init-l2` uses the short name `xai-conf:dev`. It resolves because `make cluster-up` installs a CRI-O configuration in minikube that searches `localhost:5000` first. For it to work:
 
-- start the cluster with `make cluster`, not with a plain `minikube start`;
+- start the cluster with `make cluster-up`, not with a plain `minikube start`;
 - run `make images` after the cluster is up. It needs port `5000` free on your machine for the port-forward to the registry.
 
 ## The services start slowly or restart

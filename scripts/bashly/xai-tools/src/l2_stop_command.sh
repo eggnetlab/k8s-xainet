@@ -2,7 +2,9 @@ console "stop l2"
 
 init_bc
 
-kubectl --context $context \
-    delete \
-    -k $k8s_dir \
-    --ignore-not-found=true
+if is_cluster_running; then
+    kubectl --context $context \
+        delete \
+        -k $k8s_dir \
+        --ignore-not-found=true
+fi

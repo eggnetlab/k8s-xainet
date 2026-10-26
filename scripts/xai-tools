@@ -412,7 +412,7 @@ xai_tools_data_stop_usage() {
     printf "%s\n" "Options:"
 
     printf "  %s\n" "--clean, -c"
-    printf "    Delete cluster\n"
+    printf "    Delete data\n"
     echo
 
     printf "  %s\n" "--help, -h"
@@ -540,13 +540,20 @@ success() { echo -e "$(green $mark "[SUCCESS]" $1)"; }
 error() { echo -e "$(red $mark "[ERROR]" $1)"; }
 
 : ${SLEEP_LENGTH:=1}
+: ${MAX_TRIES:=120}
 
 check_serv() {
     ADDR=$1
     PORT=$2
     ALIAS=$3
 
+    tries=0
     while ! nc -z $ADDR $PORT; do
+        tries=$((tries + 1))
+        if (( tries >= MAX_TRIES )); then
+            error "$ALIAS ($ADDR:$PORT) not reachable after $MAX_TRIES tries"
+            return 1
+        fi
         info "sleeping $ALIAS"
         sleep $SLEEP_LENGTH
     done
@@ -561,16 +568,31 @@ check_pod() {
 
     kubectl="kubectl --context $context -n $namespace"
 
-    $kubectl run test-conn -q --image=busybox:1.36 --restart=Never -- sleep 300 >/dev/null 2>&1
-    $kubectl wait --for=condition=Ready pod/test-conn --timeout=10s >/dev/null 2>&1
+    $kubectl delete pod test-conn --now --ignore-not-found >/dev/null
+    $kubectl run test-conn -q --image=busybox:1.36 --restart=Never -- sleep 300 >/dev/null \
+        || { error "cannot create the test-conn pod"; return 1; }
+    $kubectl wait --for=condition=Ready pod/test-conn --timeout=120s >/dev/null \
+        || { error "test-conn is not ready"; $kubectl describe pod test-conn | tail -n 15; return 1; }
 
-    while ! $kubectl exec test-conn -- nc -z "$FQDN" "$PORT" >/dev/null 2>&1; do
+    tries=0
+    until $kubectl exec test-conn -- nc -z "$FQDN" "$PORT" >/dev/null 2>&1; do
+        tries=$((tries + 1))
+        if (( tries >= MAX_TRIES )); then
+            error "$NAME:$PORT not reachable after $MAX_TRIES tries"
+            $kubectl delete pod test-conn --now >/dev/null
+            return 1
+        fi
         info "sleeping $NAME"
         sleep "$SLEEP_LENGTH"
     done
 
-    $kubectl delete pod test-conn --now >/dev/null 2>&1
+    $kubectl delete pod test-conn --now >/dev/null
+
     success "$NAME on"
+}
+
+is_cluster_running() {
+    [[ -n "$(docker ps -q -f name=$context)" ]];
 }
 
 xai_tools_network_command() {
@@ -616,7 +638,9 @@ xai_tools_l1_stop_command() {
 
   init_bc
 
-  kurtosis enclave rm -f $L1_NAME
+  if [[ -n "$(kurtosis enclave ls --cli-log-level warning | grep $L1_NAME)" ]]; then
+      kurtosis enclave rm -f $L1_NAME
+  fi
 }
 
 xai_tools_l2_start_command() {
@@ -646,11 +670,12 @@ xai_tools_l2_stop_command() {
 
   init_bc
 
-  kubectl --context $context \
-      delete \
-      -k $k8s_dir \
-      --ignore-not-found=true
-
+  if is_cluster_running; then
+      kubectl --context $context \
+          delete \
+          -k $k8s_dir \
+          --ignore-not-found=true
+  fi
 }
 
 xai_tools_l2_init_command() {
@@ -692,7 +717,7 @@ xai_tools_cluster_start_command() {
 
   init_cluster
 
-  if [ ! "$(docker ps -q -f name=$context)" ]; then
+  if ! is_cluster_running; then
       memory=${args['--memory']}
       cpus=${args['--cpus']}
 
@@ -720,8 +745,8 @@ xai_tools_cluster_start_command() {
 
       kubectl --context $context -n kube-system wait --for=condition=Ready node --all --timeout=120s
 
-      kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/download/v0.9.0/components.yaml
-      kubectl -n kube-system patch deployment metrics-server --type=json \
+      kubectl --context $context apply -f https://github.com/kubernetes-sigs/metrics-server/releases/download/v0.9.0/components.yaml
+      kubectl --context $context -n kube-system patch deployment metrics-server --type=json \
         -p='[{"op":"add","path":"/spec/template/spec/containers/0/args/-","value":"--kubelet-insecure-tls"}]'
   fi
 
@@ -733,8 +758,10 @@ xai_tools_cluster_stop_command() {
 
   init_cluster
 
-  minikube -p $context ssh -- sudo nft delete table ip localhost-masq
-  minikube -p $context stop
+  if is_cluster_running; then
+      minikube -p $context ssh -- sudo nft delete table ip localhost-masq
+      minikube -p $context stop
+  fi
 
   if [[ "${args['--clean']:-}" ]]; then
     minikube -p $context delete

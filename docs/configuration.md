@@ -43,7 +43,6 @@ Some values look like settings but are constants of the project. The same value 
 
 `xai-devnet` and the addresses `172.25.0.x` appear in:
 
-- the root `.env` (`NETWORK_NAME`, `NETWORK_SUBNET`);
 - `data/docker-compose.yaml` (external network name) and `data/.env` (addresses);
 - `bc-conf/.env` (L1 addresses) and the script `l1 start` (network name);
 - the Kubernetes ConfigMaps in `k8s/overlays/dev/setup/configmaps/config/` (L1 URLs, database and IPFS hosts).
@@ -55,7 +54,7 @@ see [Troubleshooting](troubleshooting.md#the-docker-network-cannot-be-created).
 
 `19970727` appears in:
 
-- the root `.env` (`L2_CHAIN_ID`), which is also passed as a build argument of the `l2-conf` image;
+- the root `.env` (`L2_CHAIN_ID`), which is also passed as a build argument of the `xai-conf` image;
 - `bc-conf/intent.toml`, in hexadecimal (`0x...130baa7`);
 - `k8s/overlays/dev/setup/configmaps/config/blockchain.yaml` (`l2ChainId`).
 

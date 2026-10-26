@@ -7,6 +7,9 @@ SHELL         := bash
 .DEFAULT_GOAL := help
 .NOTPARALLEL:
 
+$(WORKDIR).env: | $(WORKDIR).env.example
+	cp $(WORKDIR).env.example $@
+
 # Settings come from .env (copy .env.example) or from the command line.
 # .env must use plain KEY=value lines, no quotes and no spaces.
 -include $(WORKDIR).env
@@ -31,7 +34,9 @@ CLUSTER_POST_UP   ?=
 CLUSTER_PRE_DOWN  ?=
 CLUSTER_POST_DOWN ?=
 
-.PHONY: help env up down bc-up bc-down bc-restore network cluster-up cluster-down images bc-init bc-start check contracts status
+.PHONY: help env up down bc-up bc-down bc-restore network cluster-up cluster-down images bc-init bc-start check contracts status deps
+
+network cluster-up images bc-init bc-start bc-down contracts: env
 
 help: ## Show this help
 	@awk 'BEGIN {FS = ":.*## "} /^[a-zA-Z_-]+:.*## / {printf "  %-12s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -90,3 +95,6 @@ check: ## Render the manifests and validate them (used by CI)
 
 status: ## Show pods, volumes and ingresses
 	@$(KCTL) -n $(NS) get pods,pvc,ingress
+
+deps: ## Install dependencies
+	@$(WORKDIR)scripts/install-deps.sh
