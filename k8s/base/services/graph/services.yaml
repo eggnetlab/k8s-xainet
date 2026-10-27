@@ -4,7 +4,6 @@ metadata:
   labels:
     app: op-graph
   name: op-graph
-  namespace: xainet
 spec:
   ports:
     - name: graph-search

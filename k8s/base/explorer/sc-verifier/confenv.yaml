@@ -2,7 +2,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: sc-verifier
-  namespace: xainet
 spec:
   template:
     spec:

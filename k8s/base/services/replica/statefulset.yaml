@@ -2,7 +2,6 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: op-rep
-  namespace: xainet
 spec:
   serviceName: op-rep
   replicas: 1
