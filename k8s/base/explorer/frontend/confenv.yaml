@@ -2,7 +2,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: blockscout-frontend
-  namespace: xainet
 spec:
   template:
     spec:

@@ -34,6 +34,9 @@ CLUSTER_POST_UP   ?=
 CLUSTER_PRE_DOWN  ?=
 CLUSTER_POST_DOWN ?=
 
+CUSTOM_DEPS       ?=
+CUSTOM_IMAGES     ?=
+
 .PHONY: help env up down bc-up bc-down bc-restore network cluster-up cluster-down images bc-init bc-start check contracts status deps
 
 network cluster-up images bc-init bc-start bc-down contracts: env
@@ -63,6 +66,7 @@ cluster-down: ## Stop minikube
 
 images: ## Build xai-conf and push it to the minikube registry
 	@$(WORKDIR)scripts/build-and-push.sh $(L2_CHAIN_ID) $(CONTEXT)
+	@$(CUSTOM_IMAGES)
 
 bc-init: ## Start l1 and init l2 blockchains
 	$(BC_PRE_INIT)
@@ -98,3 +102,4 @@ status: ## Show pods, volumes and ingresses
 
 deps: ## Install dependencies
 	@$(WORKDIR)scripts/install-deps.sh
+	$(CUSTOM_DEPS)

@@ -4,7 +4,6 @@ metadata:
   labels:
     app: op-bundler
   name: op-bundler
-  namespace: xainet
 spec:
   revisionHistoryLimit: 2
   replicas: 1

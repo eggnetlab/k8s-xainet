@@ -134,14 +134,14 @@ bash --version          # 4.2 or newer
 
 ## Node.js and pnpm
 
-The scripts in `contracts/` are TypeScript. They need Node.js 22 or newer (the CI uses 22) and pnpm. The exact pnpm version, `10.32.1`, is pinned in `contracts/package.json`.
+The scripts in `contracts/` are TypeScript. They need Node.js 24 or newer (the CI uses 24) and pnpm. The exact pnpm version, `10.32.1`, is pinned in `contracts/package.json`.
 
-The Node.js package of many distributions is older than 22 (Ubuntu 24.04 ships version 18), so install it with [nvm](https://github.com/nvm-sh/nvm), which works without `sudo`:
+The Node.js package of many distributions is older than 24 (Ubuntu 24.04 ships version 18), so install it with [nvm](https://github.com/nvm-sh/nvm), which works without `sudo`:
 
 ```bash
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.8/install.sh | bash
 # open a new terminal, then:
-nvm install 22
+nvm install 24
 ```
 
 Node.js 22 includes Corepack, which installs the pnpm version that the project asks for:

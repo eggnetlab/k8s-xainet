@@ -2,7 +2,6 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: init-seq
-  namespace: xainet
 spec:
   ttlSecondsAfterFinished: 300
   template:

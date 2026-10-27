@@ -138,6 +138,8 @@ The Makefile has extension points for people who inherit it. A hook is a variabl
 | `BC_POST_SETUP`                         | in `bc-start`, after the bundler starts     | empty                                               |
 | `BC_PRE_DOWN`                           | before the blockchain stops                 | empty                                               |
 | `BC_POST_DOWN`                          | after the blockchain stops                  | stops Postgres, IPFS and Redis and keeps their data |
+| `CUSTOM_DEPS`                           | after the deps install                      | empty                                               |
+| `CUSTOM_IMAGES`                         | after the images build                      | empty                                               |
 
 Set a hook on the command line, in the environment, or in a Makefile that includes this one. Do not set it in a `.env` file: those files only accept plain `KEY=value` lines. Setting a hook that has a
 default replaces it. If you override `BC_PRE_SETUP` and still want a clean start of the data services, include that command in your value. If you override `BC_POST_DOWN`, include the stop of the data
